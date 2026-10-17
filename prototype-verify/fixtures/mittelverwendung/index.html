@@ -1,0 +1,80 @@
+
+<ods-dataset-context allctx-dataset="ekud_ekud_econ_20260716" context="allctx">
+
+<div ods-facet-results="jahre" ods-facet-results-context="allctx" ods-facet-results-facet-name="jahr" ods-facet-results-sort="-num">
+
+<ods-dataset-context chartctx-dataset="ekud_ekud_econ_20260716" context="fundctx, chartctx" fundctx-dataset="ekud_ekud_econ_20260716" fundctx-parameters="{'refine.jahr': ''+jahre[0].name, 'sort': 'beitrag_chf_pro_projekt'}" ng-if="jahre.length">
+<div class="fund-shell">
+<div class="ods-box fund-sidebar">
+<div class="fund-kpi" ods-aggregation="totalBeitrag" ods-aggregation-context="fundctx" ods-aggregation-expression="beitrag_chf_pro_projekt" ods-aggregation-function="SUM">
+<p class="fund-kpi-value">{{ totalBeitrag | number:0 }}</p>
+<p class="fund-kpi-label">Beiträge CHF ({{ ([].concat(fundctx.parameters['refine.jahr']))[0] }})</p>
+</div>
+<div class="fund-kpi" ods-aggregation="anzahlProjekte" ods-aggregation-context="fundctx" ods-aggregation-function="COUNT">
+<p class="fund-kpi-value">{{ anzahlProjekte | number:0 }}</p>
+<p class="fund-kpi-label">Unterstützte Projekte ({{ ([].concat(fundctx.parameters['refine.jahr']))[0] }})</p>
+</div>
+<div class="fund-filter" ods-facet-results="kategorien" ods-facet-results-context="fundctx" ods-facet-results-facet-name="kategorie">
+<label class="fund-filter-label">Kategorie</label>
+<ods-select label-modifier="name + ' (' + count + ')'" multiple="true" options="kategorien" placeholder="Alle Kategorien" selected-values="fundctx.parameters['refine.kategorie']" value-modifier="name">
+</ods-select>
+</div>
+<div class="fund-filter">
+<label class="fund-filter-label">Jahr</label>
+<ods-select label-modifier="name" options="jahre" placeholder="{{ jahre[0].name }}" selected-values="fundctx.parameters['refine.jahr']" value-modifier="name">
+</ods-select>
+</div>
+<div class="fund-filter">
+<label class="fund-filter-label">Projekt</label>
+<ods-text-search context="fundctx" field="unterstutztes_projekt" placeholder="Suche nach Projekt"></ods-text-search>
+</div>
+</div>
+<div class="ods-box fund-main" ng-init="activeTab = 'table'">
+<div class="fund-tabs">
+<button class="fund-tab" ng-class="{'is-active': activeTab === 'table'}" ng-click="activeTab = 'table'" type="button">Tabelle</button>
+<button class="fund-tab" ng-class="{'is-active': activeTab === 'chart'}" ng-click="activeTab = 'chart'" type="button">Verlauf</button>
+</div>
+<div class="fund-table-card fund-table-wrap" ng-if="activeTab === 'table'">
+<table class="fund-table">
+<thead>
+<tr>
+<th>Unterstütztes Projekt</th>
+<th>Kategorie</th>
+<th>Begünstigte</th>
+<th class="fund-num">Beitrag CHF</th>
+<th>Jahr</th>
+</tr>
+</thead>
+<tbody>
+<tr ng-repeat="row in projekte" ods-results="projekte" ods-results-context="fundctx" ods-results-max="-1">
+<td>{{ row.fields.unterstutztes_projekt }}</td>
+<td><span class="fund-tag">{{ row.fields.kategorie }}</span></td>
+<td>{{ row.fields.begunstigte }}</td>
+<td class="fund-num">{{ row.fields.beitrag_chf_pro_projekt | number:0 }}</td>
+<td>{{ row.fields.jahr }}</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="fund-table-card fund-chart-card" ng-if="activeTab === 'chart'">
+<ods-chart display-legend="true" label-x="Jahr" single-y-axis="true" single-y-axis-label="Anteil Beitrag, in %">
+<ods-chart-query category-colors='{"Kultur":"#2D2D8A","Sport":"#009E73","Denkmalpflege":"#E69F00","Jugend und Erziehung":"#0072B2","Umwelt":"#C8102E","Bildung":"#CC79A7","Sozialwesen":"#404040","Übrige":"#8B5A2B"}' context="chartctx" field-x="jahr" series-breakdown="kategorie" sort="y" stacked="percent">
+<ods-chart-serie chart-type="column" expression-y="beitrag_chf_pro_projekt" function-y="SUM">
+</ods-chart-serie>
+</ods-chart-query>
+</ods-chart>
+</div>
+<div class="fund-footer">
+<p class="fund-footer-updated">
+                            Letzte Aktualisierung: {{ fundctx.dataset.metas.data_processed | date }}
+                        </p>
+<a href="https://data.gr.ch/explore/dataset/ekud_ekud_econ_20260716?flg=de" rel="noopener noreferrer" target="_blank">
+                            Quelle anzeigen
+                        </a>
+</div>
+</div>
+</div>
+</ods-dataset-context>
+</div>
+</ods-dataset-context>

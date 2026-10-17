@@ -1,0 +1,240 @@
+{
+  "verdict": "fail",
+  "requests": 9,
+  "findings": [
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 6"
+      ],
+      "msg": "hard-coded year in chartctx-parameters"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 7"
+      ],
+      "msg": "ng-init assignment \"$root.shared = {}\" is a side effect outside the two allowed forms"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 7"
+      ],
+      "msg": "ng-init assignment \"activeTab = 'table'\" is a side effect outside the two allowed forms"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 35"
+      ],
+      "msg": "ng-click assignment \"activeTab = 'table'\": tabs built by hand, use ods-simple-tabs"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 35"
+      ],
+      "msg": "ng-click assignment \"activeTab = 'chart'\": tabs built by hand, use ods-simple-tabs"
+    },
+    {
+      "cls": "lint",
+      "severity": "warning",
+      "where": [
+        "line 64 <ods-chart-serie>"
+      ],
+      "msg": "attribute \"expresion-y\" is not a documented parameter of odsChartSerie"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 70"
+      ],
+      "msg": "ods-results + ng-repeat without ods-results-max"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 72 <ods-gauge-legacy>"
+      ],
+      "msg": "Widget <ods-gauge-legacy> is not on the closed list"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 7"
+      ],
+      "msg": "banned: $root.shared"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 75"
+      ],
+      "msg": "banned: platform-only filter currentLanguage"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "html/css"
+      ],
+      "msg": "banned: platform-only CSS class .ods-box"
+    },
+    {
+      "cls": "lint",
+      "severity": "error",
+      "where": [
+        "line 8"
+      ],
+      "msg": "side-effect assignment outside the two allowed forms: {{ selectedYear = jahre[0].name; '' }}"
+    },
+    {
+      "cls": "odsql",
+      "severity": "error",
+      "where": [
+        "line 69"
+      ],
+      "msg": "ODSQL fails on ekud_ekud_econ_20260716: ODSQL query is malformed: Unknown field: beitrag. Clause(s) containing the error(s): select."
+    },
+    {
+      "cls": "dataset",
+      "severity": "error",
+      "where": [
+        "line 63"
+      ],
+      "msg": "category-colors keys match no value of kategorie: Umwelt, Bildung, Übrige"
+    },
+    {
+      "cls": "dataset",
+      "severity": "error",
+      "where": [
+        "line 63"
+      ],
+      "msg": "values of kategorie without a CI colour (fall back to the default palette): Bildung und Forschung, übrige gemeinnützige Projekte, Umwelt und Entwicklungshilfe"
+    },
+    {
+      "cls": "dataset",
+      "severity": "error",
+      "where": [
+        "line 6"
+      ],
+      "msg": "ods-aggregation-expression \"beitrag_chf\" is not a field of ekud_ekud_econ_20260716"
+    },
+    {
+      "cls": "render",
+      "severity": "error",
+      "where": [
+        "<ods-select>",
+        "<ods-text-search>",
+        "<ods-chart>",
+        "<ods-chart-query>",
+        "<ods-chart-serie>",
+        "<ods-gauge-legacy>"
+      ],
+      "msg": "never rendered in any explored state (hidden behind ng-if / tab not reached?)"
+    },
+    {
+      "cls": "console",
+      "severity": "error",
+      "where": [
+        "375x600, initial",
+        "768x700, initial",
+        "1200x800, initial"
+      ],
+      "msg": "console.error: Error: [$injector:unpr] http://errors.angularjs.org/1.8.3/$injector/unpr?p0=currentLanguageFilterProvider%20%3C-%20currentLanguageFilter\n    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:7:168\n    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:4"
+    },
+    {
+      "cls": "layout",
+      "severity": "info",
+      "where": [
+        "375x600, initial"
+      ],
+      "msg": "content height 620px in a 600px iframe → iframe scrolls"
+    },
+    {
+      "cls": "layout",
+      "severity": "info",
+      "where": [
+        "768x700, initial"
+      ],
+      "msg": "content height 720px in a 700px iframe → iframe scrolls"
+    },
+    {
+      "cls": "layout",
+      "severity": "info",
+      "where": [
+        "1200x800, initial"
+      ],
+      "msg": "content height 820px in a 800px iframe → iframe scrolls"
+    }
+  ],
+  "states": [
+    {
+      "size": "375x600",
+      "state": "initial",
+      "settleMs": 1826,
+      "shot": "375x600-default.png",
+      "console": [
+        "console.error: Error: [$injector:unpr] http://errors.angularjs.org/1.8.3/$injector/unpr?p0=currentLanguageFilterProvider%20%3C-%20currentLanguageFilter\n    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:7:168\n    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:4"
+      ],
+      "empty": [],
+      "text": [],
+      "overflow": 0,
+      "offenders": [],
+      "height": 620,
+      "maps": [],
+      "present": [
+        "ods-dataset-context",
+        "ods-facet-results=\"jahre\""
+      ]
+    },
+    {
+      "size": "768x700",
+      "state": "initial",
+      "settleMs": 2133,
+      "shot": "768x700-default.png",
+      "console": [
+        "console.error: Error: [$injector:unpr] http://errors.angularjs.org/1.8.3/$injector/unpr?p0=currentLanguageFilterProvider%20%3C-%20currentLanguageFilter\n    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:7:168\n    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:4"
+      ],
+      "empty": [],
+      "text": [],
+      "overflow": 0,
+      "offenders": [],
+      "height": 720,
+      "maps": [],
+      "present": [
+        "ods-dataset-context",
+        "ods-facet-results=\"jahre\""
+      ]
+    },
+    {
+      "size": "1200x800",
+      "state": "initial",
+      "settleMs": 1826,
+      "shot": "1200x800-default.png",
+      "console": [
+        "console.error: Error: [$injector:unpr] http://errors.angularjs.org/1.8.3/$injector/unpr?p0=currentLanguageFilterProvider%20%3C-%20currentLanguageFilter\n    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:7:168\n    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:4"
+      ],
+      "empty": [],
+      "text": [],
+      "overflow": 0,
+      "offenders": [],
+      "height": 820,
+      "maps": [],
+      "present": [
+        "ods-dataset-context",
+        "ods-facet-results=\"jahre\""
+      ]
+    }
+  ]
+}

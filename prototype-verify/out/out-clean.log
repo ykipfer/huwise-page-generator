@@ -1,0 +1,51 @@
+# Verification: mittelverwendung
+
+**Verdict: FAIL — 6 distinct errors**  ·  0 warnings  ·  platform theme rev 44
+
+Requests to data.gr.ch API this run: **29** (dry-run 2, render 27) of the anonymous 5000/day budget.
+
+## lint
+
+- **error** ng-init assignment "activeTab = 'table'" is a side effect outside the two allowed forms  
+  _line 32_
+- **error** ng-click assignment "activeTab = 'table'": tabs built by hand, use ods-simple-tabs  
+  _line 34_
+- **error** ng-click assignment "activeTab = 'chart'": tabs built by hand, use ods-simple-tabs  
+  _line 34_
+- **error** banned: platform-only CSS class .ods-box  
+  _html/css_
+
+## dataset
+
+- **error** category-colors keys match no value of kategorie: Umwelt, Bildung, Übrige  
+  _line 62_
+- **error** values of kategorie without a CI colour (fall back to the default palette): Bildung und Forschung, übrige gemeinnützige Projekte, Umwelt und Entwicklungshilfe  
+  _line 62_
+
+## layout
+
+- **info** content height 1046px in a 600px iframe → iframe scrolls  
+  _375x600, initial_
+- **info** content height 720px in a 700px iframe → iframe scrolls  
+  _768x700, initial_
+- **info** content height 820px in a 800px iframe → iframe scrolls  
+  _1200x800, initial_
+
+## Screenshots
+
+| size | state | settle | file |
+|---|---|---|---|
+| 375x600 | initial | 2432ms | 375x600-default.png |
+| 375x600 | after clicking "Tabelle" | 303ms | 375x600-click-0.png |
+| 375x600 | after clicking "Verlauf" | 1824ms | 375x600-click-1.png |
+| 768x700 | initial | 2811ms | 768x700-default.png |
+| 768x700 | after clicking "Tabelle" | 303ms | 768x700-click-0.png |
+| 768x700 | after clicking "Verlauf" | 1823ms | 768x700-click-1.png |
+| 1200x800 | initial | 2478ms | 1200x800-default.png |
+| 1200x800 | after clicking "Tabelle" | 305ms | 1200x800-click-0.png |
+| 1200x800 | after clicking "Verlauf" | 1826ms | 1200x800-click-1.png |
+| 375x600 | full height | | 375x600-full.png |
+| 768x700 | full height | | 768x700-full.png |
+| 1200x800 | full height | | 1200x800-full.png |
+
+node verify.mjs fixtures/mittelverwendung  3.32s user 0.65s system 20% cpu 19.423 total

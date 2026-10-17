@@ -1,0 +1,80 @@
+# Verification: mittelverwendung-broken
+
+**Verdict: FAIL — 17 distinct errors**  ·  1 warnings  ·  platform theme rev 44
+
+Requests to data.gr.ch API this run: **9** (dry-run 3, render 6) of the anonymous 5000/day budget.
+
+## lint
+
+- **error** hard-coded year in chartctx-parameters  
+  _line 6_
+- **error** ng-init assignment "$root.shared = {}" is a side effect outside the two allowed forms  
+  _line 7_
+- **error** ng-init assignment "activeTab = 'table'" is a side effect outside the two allowed forms  
+  _line 7_
+- **error** ng-click assignment "activeTab = 'table'": tabs built by hand, use ods-simple-tabs  
+  _line 35_
+- **error** ng-click assignment "activeTab = 'chart'": tabs built by hand, use ods-simple-tabs  
+  _line 35_
+- **error** ods-results + ng-repeat without ods-results-max  
+  _line 70_
+- **error** Widget <ods-gauge-legacy> is not on the closed list  
+  _line 72 <ods-gauge-legacy>_
+- **error** banned: $root.shared  
+  _line 7_
+- **error** banned: platform-only filter currentLanguage  
+  _line 75_
+- **error** banned: platform-only CSS class .ods-box  
+  _html/css_
+- **error** side-effect assignment outside the two allowed forms: {{ selectedYear = jahre[0].name; '' }}  
+  _line 8_
+- **warning** attribute "expresion-y" is not a documented parameter of odsChartSerie  
+  _line 64 <ods-chart-serie>_
+
+## dataset
+
+- **error** category-colors keys match no value of kategorie: Umwelt, Bildung, Übrige  
+  _line 63_
+- **error** values of kategorie without a CI colour (fall back to the default palette): Bildung und Forschung, übrige gemeinnützige Projekte, Umwelt und Entwicklungshilfe  
+  _line 63_
+- **error** ods-aggregation-expression "beitrag_chf" is not a field of ekud_ekud_econ_20260716  
+  _line 6_
+
+## odsql
+
+- **error** ODSQL fails on ekud_ekud_econ_20260716: ODSQL query is malformed: Unknown field: beitrag. Clause(s) containing the error(s): select.  
+  _line 69_
+
+## console
+
+- **error** console.error: Error: [$injector:unpr] http://errors.angularjs.org/1.8.3/$injector/unpr?p0=currentLanguageFilterProvider%20%3C-%20currentLanguageFilter
+    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:7:168
+    at https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js:4  
+  _375x600, initial · 768x700, initial · 1200x800, initial_
+
+## render
+
+- **error** never rendered in any explored state (hidden behind ng-if / tab not reached?)  
+  _<ods-select> · <ods-text-search> · <ods-chart> · <ods-chart-query> · <ods-chart-serie> · <ods-gauge-legacy>_
+
+## layout
+
+- **info** content height 620px in a 600px iframe → iframe scrolls  
+  _375x600, initial_
+- **info** content height 720px in a 700px iframe → iframe scrolls  
+  _768x700, initial_
+- **info** content height 820px in a 800px iframe → iframe scrolls  
+  _1200x800, initial_
+
+## Screenshots
+
+| size | state | settle | file |
+|---|---|---|---|
+| 375x600 | initial | 1826ms | 375x600-default.png |
+| 768x700 | initial | 2133ms | 768x700-default.png |
+| 1200x800 | initial | 1826ms | 1200x800-default.png |
+| 375x600 | full height | | 375x600-full.png |
+| 768x700 | full height | | 768x700-full.png |
+| 1200x800 | full height | | 1200x800-full.png |
+
+node verify.mjs fixtures/mittelverwendung-broken  1.35s user 0.42s system 17% cpu 10.061 total

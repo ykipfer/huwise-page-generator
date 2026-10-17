@@ -1,0 +1,274 @@
+:root {
+    /* AWT Graubünden Design System */
+    --awt-blue: #2D2D8A;
+    --awt-ink: #1A1A1A;
+    --awt-muted: #6B6B68;
+    --awt-rule: #D9D9D6;
+    --awt-paper: #FFFFFF;
+    --awt-bg: #FBFAF7;
+}
+
+body {
+    background-color: white;
+}
+
+.ods-box {
+    background: var(--awt-paper);
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(26, 26, 26, 0.08);
+    padding: 20px;
+}
+
+.fund-shell {
+    max-width: 980px;
+    margin: 0 auto;
+    display: flex;
+    align-items: stretch;
+    gap: 16px;
+    font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+    color: var(--awt-ink);
+}
+
+/* Sidebar: KPIs + Filter (eigenes ods-box) */
+.fund-sidebar {
+    width: 240px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+}
+
+.fund-kpi {
+    background: var(--awt-paper);
+    border: 1px solid var(--awt-rule);
+    border-top: 4px solid var(--awt-blue);
+    border-radius: 12px;
+    padding: 16px 18px;
+    text-align: center;
+}
+
+.fund-kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--awt-blue);
+    margin: 0;
+}
+
+.fund-kpi-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--awt-muted);
+    margin: 4px 0 0;
+}
+
+.fund-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fund-filter .odswidget-select {
+    font-size: 13px;
+}
+
+.fund-filter .odswidget-text-search {
+    text-align: left;
+    margin: 0;
+}
+
+.fund-filter .odswidget-text-search &gt; div {
+    margin: 0;
+}
+
+.fund-filter .odswidget-text-search input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left !important;
+    padding: 8px 34px 8px 10px !important;
+    border: 1px solid var(--awt-rule);
+    border-radius: 4px;
+    color: var(--awt-ink);
+}
+
+.fund-filter-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--awt-muted);
+}
+
+/* Main: eigenes ods-box mit Tabs + Tabelle/Chart + Footer */
+.fund-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Tabs: Tabelle / Nach Kategorie */
+.fund-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--awt-rule);
+}
+
+.fund-tab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 18px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--awt-muted);
+    cursor: pointer;
+}
+
+.fund-tab:hover {
+    color: var(--awt-blue);
+}
+
+.fund-tab.is-active {
+    color: var(--awt-blue);
+    border-bottom-color: var(--awt-blue);
+}
+
+.fund-table-card {
+    flex: 1;
+    background: var(--awt-paper);
+    border-radius: 4px;
+    overflow: hidden;
+    /* Beide Tabs (Tabelle/Verlauf) füllen dieselbe Höhe -&gt; kein Sprung beim Wechseln */
+    min-height: 440px;
+}
+
+/* Feste Höhe, Tabelle scrollt intern; horizontal scrollbar bei schmalem Viewport */
+.fund-table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 440px;
+}
+
+.fund-table {
+    width: 100%;
+    /* verhindert Spalten-Crush/Abschneiden (z. B. JAHR) -&gt; horizontales Scrollen */
+    min-width: 600px;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.fund-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--awt-blue);
+    color: #FFFFFF;
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 7px 14px;
+    border-bottom: none;
+}
+
+.fund-table td {
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--awt-rule);
+    color: var(--awt-ink);
+    vertical-align: top;
+}
+
+.fund-table tbody tr:nth-child(even) {
+    background: var(--awt-bg);
+}
+
+.fund-table tbody tr:hover {
+    background: #E9EAF6;
+}
+
+.fund-table td:first-child {
+    font-weight: 600;
+    color: var(--awt-blue);
+}
+
+.fund-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.fund-tag {
+    color: var(--awt-muted);
+}
+
+.fund-chart-card {
+    padding: 12px;
+}
+
+.fund-chart-card .odswidget-charts {
+    height: 396px;
+}
+
+.fund-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--awt-rule);
+    font-size: 13px;
+}
+
+.fund-footer-updated {
+    color: var(--awt-muted);
+    margin: 0;
+}
+
+.fund-footer a {
+    color: var(--awt-blue);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.fund-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Kompakt-Embed: unter 720px eine Spalte, KPIs nebeneinander */
+@media (max-width: 720px) {
+    .fund-shell {
+        flex-direction: column;
+    }
+
+    .fund-sidebar {
+        width: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .fund-kpi {
+        flex: 1 1 140px;
+    }
+
+    .fund-filter {
+        flex: 1 1 100%;
+    }
+
+    .fund-table-card {
+        min-height: 360px;
+    }
+
+    .fund-table-wrap {
+        max-height: 360px;
+    }
+
+    .fund-chart-card .odswidget-charts {
+        height: 336px;
+    }
+}
