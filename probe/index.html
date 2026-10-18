@@ -1,0 +1,52 @@
+<!-- PROBE-00 HTML comment: does the editor keep comments? -->
+<div class="probe" data-probe="PROBE-root" aria-label="PROBE-aria">
+    <h1>Editor-Probe (nicht veröffentlichen)</h1>
+    <p>Grün = Regel greift, Rot = Regel wurde entfernt oder greift nicht.</p>
+
+    <!-- HTML sanitiser probes -->
+    <script>window.PROBE01 = 'PROBE-01 script ran';</script>
+    <div class="t" onclick="alert('PROBE-02')" onmouseover="this.title='PROBE-03'">PROBE-02/03 on*-Handler</div>
+    <img src="https://data.gr.ch/does-not-exist.png" onerror="this.alt='PROBE-04'" alt="PROBE-04 img">
+    <a href="javascript:alert('PROBE-05')">PROBE-05 javascript:-Link</a>
+    <iframe src="https://example.org/" title="PROBE-06" width="200" height="60"></iframe>
+    <svg width="120" height="30" viewBox="0 0 120 30" data-probe="PROBE-07" role="img" aria-label="PROBE-07 svg">
+        <rect width="120" height="30" fill="#2D2D8A"></rect>
+        <text x="6" y="20" fill="#fff" font-size="12">PROBE-07 svg</text>
+    </svg>
+    <form action="https://example.org/" data-probe="PROBE-08">
+        <input type="text" placeholder="PROBE-09 input" ng-model="probeText">
+        <select ng-model="probeSelect"><option value="a">PROBE-10 select</option></select>
+        <button type="button" ng-click="probeClicked = true">PROBE-11 button</button>
+    </form>
+    <style>.t-inline-style { background: #2a9d4b !important; }</style>
+    <div class="t t-inline-style">PROBE-12 &lt;style&gt; im HTML-Feld</div>
+    <div class="t" style="background: #2a9d4b !important;">PROBE-13 style-Attribut</div>
+    <div class="t" style="--probe-ok: #2a9d4b; background: var(--probe-ok) !important;">PROBE-14 Custom Property im style-Attribut</div>
+    <div class="t" style="background: #2a9d4b !important; width: calc(100% - 40px);">PROBE-15 calc() im style-Attribut (schmaler als die anderen)</div>
+    <details><summary>PROBE-16 details/summary</summary>Inhalt</details>
+    <object data="https://example.org/" data-probe="PROBE-17"></object>
+    <link rel="stylesheet" href="https://example.org/probe.css" data-probe="PROBE-18">
+
+    <!-- AngularJS sanity: Widgets need these to survive -->
+    <div class="t" ng-init="probeAngular = 'PROBE-19 angular ok'" ng-class="{'t-ok': probeAngular}">{{ probeAngular }}</div>
+    <div class="t t-ok" ng-if="true">PROBE-20 ng-if</div>
+    <div class="t" ng-class="{'t-ok': probeClicked}">PROBE-21 wird grün nach Klick auf PROBE-11</div>
+
+    <!-- CSS-field probes (rules live in stylesheet.css) -->
+    <div class="t t-var">PROBE-30 :root Custom Property</div>
+    <div class="t t-calc">PROBE-31 Höhe = calc(var(--target-height) / 10) = 80px</div>
+    <div class="t t-media">PROBE-32 @media (grün nur unter 720px Breite)</div>
+    <div class="t t-font">PROBE-33 @font-face (Schrift sieht anders aus, wenn geladen)</div>
+    <div class="t t-import">PROBE-34 @import</div>
+    <div class="probe-sel"><div class="t">PROBE-35 Kind-Selektor &gt; und :not()</div></div>
+
+    <!-- Map min-height override: map should be 250px tall, not the Widget's 400px floor -->
+    <div class="probe-map">
+        <ods-dataset-context context="regions" regions-dataset="dvs_awt_regi_202502110">
+            <ods-map toolbar-geolocation="false" toolbar-drawing="false">
+                <ods-map-layer context="regions" display="auto" color="#2D2D8A" title="PROBE-36 Karte"></ods-map-layer>
+            </ods-map>
+        </ods-dataset-context>
+        <p>PROBE-36: Karte soll 250px hoch sein (sonst 400px Mindesthöhe).</p>
+    </div>
+</div>

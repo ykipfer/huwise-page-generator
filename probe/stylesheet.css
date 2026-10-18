@@ -1,0 +1,33 @@
+/* PROBE-CSS-00: does the editor keep comments? */
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap"); /* PROBE-34 */
+
+@font-face { /* PROBE-33 */
+    font-family: "ProbeFont";
+    src: url("https://fonts.gstatic.com/s/pacifico/v22/FwZY7-Qmy14u9lezJ-6H6MmBp0u-.woff2") format("woff2");
+}
+
+:root {
+    --target-height: 800px; /* PROBE-30, PROBE-31 */
+    --probe-ok: #2a9d4b;
+}
+
+.probe .t {
+    background: #d64545; /* red until a probe rule turns it green */
+    color: #fff;
+    padding: 4px 8px;
+    margin: 4px 0;
+}
+
+.probe .t-ok { background: #2a9d4b; }
+.probe .t-var { background: var(--probe-ok); }
+.probe .t-calc { background: #2a9d4b; height: calc(var(--target-height) / 10); }
+.probe .t-font { background: #2a9d4b; font-family: "ProbeFont", sans-serif; }
+.probe .t-import { background: #2a9d4b; font-family: "Pacifico", sans-serif; }
+.probe-sel > div.t:not(.t-none) { background: #2a9d4b; }
+
+@media (max-width: 719px) {
+    .probe .t-media { background: #2a9d4b; }
+}
+
+/* PROBE-36: override the Widget's 400px map floor */
+.probe-map .odswidget-map { min-height: 250px !important; height: 250px; }
