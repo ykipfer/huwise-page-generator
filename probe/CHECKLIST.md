@@ -19,7 +19,7 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 | PROBE-01 | `<script>` | **Rejected on save** (inline; only script tags pointing to trusted remote scripts allowed) | n/a |
 | PROBE-02/03 | `onclick`, `onmouseover` | **Rejected on save** (any attribute starting with `on`) | n/a |
 | PROBE-04 | `<img onerror>` | **Rejected on save** (`onerror`); plain `<img>` still probed | |
-| PROBE-05 | `javascript:` link | | |
+| PROBE-05 | `javascript:` link | **Rejected on save** (any `javascript:` attribute value) | n/a |
 | PROBE-06 | `<iframe>` | **Rejected on save** (external content) | n/a |
 | PROBE-07 | inline `<svg>` | | |
 | PROBE-08 | `<form>` | **Rejected on save** | n/a |
