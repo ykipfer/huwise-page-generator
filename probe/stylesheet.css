@@ -1,5 +1,5 @@
 /* PROBE-CSS-00: does the editor keep comments? */
-/* PROBE-34 @import removed: rejected on save */
+/* PROBE-34 removed: CSS imports are rejected on save */
 
 @font-face { /* PROBE-33 */
     font-family: "ProbeFont";
