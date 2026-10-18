@@ -17,8 +17,8 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 |---|---|---|---|
 | PROBE-00 / CSS-00 | comments in HTML / CSS | | |
 | PROBE-01 | `<script>` | **Rejected on save** (inline; only script tags pointing to trusted remote scripts allowed) | n/a |
-| PROBE-02/03 | `onclick`, `onmouseover` | | |
-| PROBE-04 | `<img onerror>` | | |
+| PROBE-02/03 | `onclick`, `onmouseover` | **Rejected on save** (any attribute starting with `on`) | n/a |
+| PROBE-04 | `<img onerror>` | **Rejected on save** (`onerror`); plain `<img>` still probed | |
 | PROBE-05 | `javascript:` link | | |
 | PROBE-06 | `<iframe>` | **Rejected on save** (external content) | n/a |
 | PROBE-07 | inline `<svg>` | | |
