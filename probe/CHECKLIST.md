@@ -29,7 +29,7 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 | PROBE-14 | custom property in `style="…"` | | |
 | PROBE-15 | `calc()` in `style="…"` | | |
 | PROBE-16 | `<details>` | | |
-| PROBE-17 | `<object>` | | |
+| PROBE-17 | `<object>` | **Rejected on save** | n/a |
 | PROBE-18 | `<link rel=stylesheet>` | | |
 | PROBE-19–21 | `ng-init`, `{{ }}`, `ng-if`, `ng-class`, `ng-click`, `ng-model` | | |
 | PROBE-root | `data-*`, `aria-*` | | |
