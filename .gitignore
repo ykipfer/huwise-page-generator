@@ -1,3 +1,8 @@
 # files
 ods-widgets/
 page_examples/
+# verifier output (reports, screenshots) inside Page folders
+verifier-output/
+# verifier dependencies and agent worktrees
+node_modules/
+.claude/worktrees/

@@ -1,0 +1,7 @@
+{
+  "name": "huwise-page-verifier",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" },
+  "dependencies": { "parse5": "^7.2.1" }
+}
