@@ -47,13 +47,12 @@ function markdown(report) {
 
 const opts = parseArgs(process.argv.slice(2));
 const pageDir = path.resolve(opts.dir);
-const read = name => {
-  const p = path.join(pageDir, name);
-  if (!fs.existsSync(p)) usage(`Page folder is missing ${name}: ${pageDir}`);
-  return fs.readFileSync(p, 'utf8');
-};
-const html = read('index.html');
-const css = read('stylesheet.css');
+const htmlPath = path.join(pageDir, 'index.html');
+if (!fs.existsSync(htmlPath)) usage(`Page folder is missing index.html: ${pageDir}`);
+const html = fs.readFileSync(htmlPath, 'utf8');
+// A Page without a stylesheet is valid: its CSS part is empty.
+const cssPath = path.join(pageDir, 'stylesheet.css');
+const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '';
 
 const findings = lint({ html, css });
 const errors = findings.filter(f => f.severity === 'error');

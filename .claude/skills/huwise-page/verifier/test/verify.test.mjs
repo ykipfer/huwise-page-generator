@@ -75,3 +75,9 @@ test('the verifier-output folder is gitignored', () => {
   const r = spawnSync('git', ['check-ignore', '-q', 'some-page/verifier-output/report.json'], { cwd: here });
   assert.equal(r.status, 0);
 });
+
+test('a Page folder without stylesheet.css passes with exit 0', () => {
+  const r = run('allowed-no-stylesheet');
+  assert.equal(r.status, 0);
+  assert.deepEqual(r.report.findings, []);
+});
