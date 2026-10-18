@@ -9,8 +9,9 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 1. In the data.gr.ch back office, create a new code-editor Page, slug `probe-editor`, title "Editor-Probe". Don't publish it.
 2. In the **German** slot, paste `index.html` into the HTML field and `stylesheet.css` into the CSS field. Leave every other language slot empty.
 3. Save, then **reload the editor**. Copy both fields back out exactly as stored (this is the ground truth; the rendered page can't tell "stripped" from "kept but inert").
-4. Send me both stored texts (or diff them against the originals). I'll fill in the table below from them.
-5. Open the preview / `https://data.gr.ch/pages/probe-editor/?headless=true` while logged in. Note which boxes are red and which are green, at full width and at < 720px (devtools device mode), and how tall the PROBE-36 map is (250px = override works, 400px = it doesn't).
+4. If save fails with another validation error, copy the message verbatim, remove the offending probe, and retry; each rejection is a result.
+5. Send me both stored texts (or diff them against the originals). I'll fill in the table below from them.
+6. Open the preview / `https://data.gr.ch/pages/probe-editor/?headless=true` while logged in. Note which boxes are red and which are green, at full width and at < 720px (devtools device mode), and how tall the PROBE-36 map is (250px = override works, 400px = it doesn't).
 
 | Probe | What it tests | Kept in stored source? | Rendered result |
 |---|---|---|---|
@@ -22,7 +23,7 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 | PROBE-06 | `<iframe>` | | |
 | PROBE-07 | inline `<svg>` | | |
 | PROBE-08–11 | `<form>`, `<input>`, `<select>`, `<button>` | | |
-| PROBE-12 | `<style>` in the HTML field | | |
+| PROBE-12 | `<style>` in the HTML field | **Rejected on save** (validation error, see ticket) | n/a |
 | PROBE-13 | `style="…"` attribute | | |
 | PROBE-14 | custom property in `style="…"` | | |
 | PROBE-15 | `calc()` in `style="…"` | | |
