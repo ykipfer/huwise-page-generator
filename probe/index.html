@@ -13,11 +13,12 @@
         <rect width="120" height="30" fill="#2D2D8A"></rect>
         <text x="6" y="20" fill="#fff" font-size="12">PROBE-07 svg</text>
     </svg>
-    <form action="https://example.org/" data-probe="PROBE-08">
+    <!-- PROBE-08 <form> removed: rejected on save; inputs kept in a div -->
+    <div data-probe="PROBE-08">
         <input type="text" placeholder="PROBE-09 input" ng-model="probeText">
         <select ng-model="probeSelect"><option value="a">PROBE-10 select</option></select>
         <button type="button" ng-click="probeClicked = true">PROBE-11 button</button>
-    </form>
+    </div>
     <!-- PROBE-12 removed: <style> in the HTML field is rejected on save -->
     <div class="t" style="background: #2a9d4b !important;">PROBE-13 style-Attribut</div>
     <div class="t" style="--probe-ok: #2a9d4b; background: var(--probe-ok) !important;">PROBE-14 Custom Property im style-Attribut</div>

@@ -22,7 +22,8 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 | PROBE-05 | `javascript:` link | | |
 | PROBE-06 | `<iframe>` | | |
 | PROBE-07 | inline `<svg>` | | |
-| PROBE-08–11 | `<form>`, `<input>`, `<select>`, `<button>` | | |
+| PROBE-08 | `<form>` | **Rejected on save** | n/a |
+| PROBE-09–11 | `<input>`, `<select>`, `<button>` (outside a form) | | |
 | PROBE-12 | `<style>` in the HTML field | **Rejected on save** (validation error, see ticket) | n/a |
 | PROBE-13 | `style="…"` attribute | | |
 | PROBE-14 | custom property in `style="…"` | | |
