@@ -54,8 +54,16 @@ test('refused tags only inside an HTML comment pass', () => {
   assert.deepEqual(r.report.findings, []);
 });
 
-test('on-change on an ods-* Widget passes (clean fixture carries ods-select on-change)', () => {
-  assert.equal(run('clean').status, 0);
+test('on-change on an ods-* Widget passes', () => {
+  const r = run('allowed-on-change-on-widget');
+  assert.equal(r.status, 0);
+  assert.deepEqual(r.report.findings, []);
+});
+
+test('on-change on a plain <div> fails', () => {
+  const r = run('refused-on-change-on-div');
+  assert.equal(r.status, 1);
+  assert.deepEqual(summary(r.report), [['refused-on-attribute', 'error', 'index.html', 2]]);
 });
 
 test('bad usage exits 2', () => {
