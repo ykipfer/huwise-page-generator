@@ -25,8 +25,16 @@ A named, reusable combination of Widgets and expressions that does one job in a 
 _Avoid_: Recipe, snippet, template
 
 **Page Request**:
-The input to one generation: a dataset ID from data.gr.ch plus a prompt describing the Visualizations wanted.
+The input to one generation: a dataset ID from data.gr.ch, optionally one Companion Dataset, plus a prompt describing the Visualizations wanted.
 _Avoid_: Prompt (for the whole input), job
+
+**Companion Dataset**:
+A second data.gr.ch dataset the owner names in a Page Request, next to its main dataset. It gets Visualizations of its own and can share filters with the main dataset, but its values are never combined with the main dataset's.
+_Avoid_: Second dataset, secondary dataset
+
+**Boundary Dataset**:
+A data.gr.ch dataset of geo shapes for one spatial level (such as Gemeinden or Regionen) that a Page joins to a dataset by a key, to draw a map. Chosen from a fixed list, never searched for. Not a Companion Dataset.
+_Avoid_: Geo dataset, shapefile, second dataset
 
 **CI Rules**:
 The visual and content constraints (colours, fonts, visual conventions) every Page must follow, taken from the AWT Design System and its translation to the web in the Mittelverwendung Example Page.
@@ -55,3 +63,11 @@ _Avoid_: Format, mode
 **Embed Caption**:
 The text below the iframe on the Host Page, with a short description and the source (the gr.ch field "Legende").
 _Avoid_: Legend (that is a chart's legend)
+
+**Benchmark**:
+The fixed set of Page Requests the generator is judged on, each with a checklist of what its Page must contain.
+_Avoid_: Test suite, eval set
+
+**Baseline**:
+The results of the last full Benchmark run the owner accepted. Later runs are compared with it to find regressions.
+_Avoid_: Reference run, golden
