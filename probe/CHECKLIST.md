@@ -20,7 +20,7 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 | PROBE-02/03 | `onclick`, `onmouseover` | | |
 | PROBE-04 | `<img onerror>` | | |
 | PROBE-05 | `javascript:` link | | |
-| PROBE-06 | `<iframe>` | | |
+| PROBE-06 | `<iframe>` | **Rejected on save** (external content) | n/a |
 | PROBE-07 | inline `<svg>` | | |
 | PROBE-08 | `<form>` | **Rejected on save** | n/a |
 | PROBE-09–11 | `<input>`, `<select>`, `<button>` (outside a form) | | |
