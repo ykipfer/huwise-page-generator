@@ -16,7 +16,7 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 | Probe | What it tests | Kept in stored source? | Rendered result |
 |---|---|---|---|
 | PROBE-00 / CSS-00 | comments in HTML / CSS | | |
-| PROBE-01 | `<script>` | | |
+| PROBE-01 | `<script>` | **Rejected on save** (inline; only script tags pointing to trusted remote scripts allowed) | n/a |
 | PROBE-02/03 | `onclick`, `onmouseover` | | |
 | PROBE-04 | `<img onerror>` | | |
 | PROBE-05 | `javascript:` link | | |

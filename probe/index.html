@@ -4,7 +4,7 @@
     <p>Grün = Regel greift, Rot = Regel wurde entfernt oder greift nicht.</p>
 
     <!-- HTML sanitiser probes -->
-    <script>window.PROBE01 = 'PROBE-01 script ran';</script>
+    <!-- PROBE-01 removed: inline <script> is rejected on save -->
     <div class="t" onclick="alert('PROBE-02')" onmouseover="this.title='PROBE-03'">PROBE-02/03 on*-Handler</div>
     <img src="https://data.gr.ch/does-not-exist.png" onerror="this.alt='PROBE-04'" alt="PROBE-04 img">
     <a href="javascript:alert('PROBE-05')">PROBE-05 javascript:-Link</a>
