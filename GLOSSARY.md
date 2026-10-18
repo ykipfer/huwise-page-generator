@@ -12,6 +12,10 @@ _Avoid_: Dashboard, visualization (for the whole page)
 One chart, map, table, or KPI inside a Page. A Page holds one or more.
 _Avoid_: Widget (for the visual element), chart (as the umbrella term)
 
+**Page Sketch**:
+A Widget-free draft of a Page, on the real CI layout, with a labelled placeholder for each Visualization. The owner approves it before the Page is built, and its layout becomes the Page's.
+_Avoid_: Mockup, wireframe, prototype
+
 **Widget**:
 An ODS widget: one of the `ods-*` building blocks (directives) from the ods-widgets library that a Page is assembled from. A Visualization is built from one or more Widgets.
 _Avoid_: Component, directive (in conversation)
