@@ -37,7 +37,7 @@ Use an **unpublished throwaway Page** with slug **`probe-editor`**, and delete i
 | PROBE-31 | `calc(var(--target-height) …)` | | |
 | PROBE-32 | `@media` | | |
 | PROBE-33 | `@font-face` (needed for Eudoxus Sans) | | |
-| PROBE-34 | `@import` | | |
+| PROBE-34 | `@import` | **Rejected on save** (CSS tab) | n/a |
 | PROBE-35 | `>` and `:not()` selectors | | |
 | PROBE-36 | `.odswidget-map` `min-height` override | | |
 

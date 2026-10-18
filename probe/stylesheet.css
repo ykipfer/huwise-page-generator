@@ -1,5 +1,5 @@
 /* PROBE-CSS-00: does the editor keep comments? */
-@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap"); /* PROBE-34 */
+/* PROBE-34 @import removed: rejected on save */
 
 @font-face { /* PROBE-33 */
     font-family: "ProbeFont";
