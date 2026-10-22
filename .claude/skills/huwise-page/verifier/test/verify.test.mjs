@@ -109,6 +109,8 @@ const lintErrors = [
   ['banned-hard-coded-year-expression', 'banned-hard-coded-year', 'index.html', 2],
   ['banned-results-repeat-without-max', 'banned-results-repeat-without-max', 'index.html', 2],
   ['banned-results-repeat-without-max-same-element', 'banned-results-repeat-without-max', 'index.html', 2],
+  ['banned-results-repeat-without-max-default-variable', 'banned-results-repeat-without-max', 'index.html', 2],
+  ['banned-bootstrap-grid-css', 'banned-bootstrap-grid', 'stylesheet.css', 2],
   ['banned-hand-built-tabs', 'banned-hand-built-tabs', 'index.html', 2],
   ['side-effect-scope-variable', 'side-effect', 'index.html', 2],
   ['side-effect-not-hidden', 'side-effect', 'index.html', 2],
@@ -125,41 +127,21 @@ for (const [fixture, rule, file, line] of lintErrors) {
   });
 }
 
-test('every Widget on the closed list, in element and attribute form, passes', () => {
-  const r = run('allowed-listed-widgets');
-  assert.deepEqual(r.report.findings, []);
-  assert.equal(r.status, 0);
-});
-
-test('classes that only contain a banned class name pass', () => {
-  const r = run('allowed-class-lookalikes');
-  assert.deepEqual(r.report.findings, []);
-  assert.equal(r.status, 0);
-});
-
-test('banned names inside a CSS comment pass', () => {
-  const r = run('allowed-banned-names-in-css-comment');
-  assert.deepEqual(r.report.findings, []);
-  assert.equal(r.status, 0);
-});
-
-test('year-like numbers in prose, limits and dataset IDs pass', () => {
-  const r = run('allowed-year-like-numbers');
-  assert.deepEqual(r.report.findings, []);
-  assert.equal(r.status, 0);
-});
-
-test('a single ng-click toggle is not a hand-built tab bar and passes', () => {
-  const r = run('allowed-ng-click-toggle');
-  assert.deepEqual(r.report.findings, []);
-  assert.equal(r.status, 0);
-});
-
-for (const fixture of ['allowed-side-effect-guarded-default', 'allowed-side-effect-one-way-copy']) {
-  test(`${fixture}: the allowed side-effect form passes`, () => {
+// Allowed constructs that the lint rules above must not report.
+const allowed = [
+  ['allowed-listed-widgets', 'every Widget on the closed list, in element and attribute form, passes'],
+  ['allowed-class-lookalikes', 'classes that only contain a banned class name pass'],
+  ['allowed-banned-names-in-css-comment', 'banned names inside a CSS comment pass'],
+  ['allowed-year-like-numbers', 'year-like numbers in prose, limits and dataset IDs pass'],
+  ['allowed-ng-click-toggle', 'a single ng-click toggle is not a hand-built tab bar and passes'],
+  ['allowed-side-effect-guarded-default', 'the guarded default side-effect form passes'],
+  ['allowed-side-effect-one-way-copy', 'the one-way copy side-effect form passes'],
+];
+for (const [fixture, description] of allowed) {
+  test(`${fixture}: ${description}`, () => {
     const r = run(fixture);
-    assert.deepEqual(r.report.findings, []);
     assert.equal(r.status, 0);
+    assert.deepEqual(r.report.findings, []);
   });
 }
 

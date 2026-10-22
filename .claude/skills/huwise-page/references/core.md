@@ -35,7 +35,7 @@ A context is a named connection to one dataset plus a set of query parameters. E
 </ods-dataset-context>
 ```
 
-- `context` lists the names. Each name gets `<name>-dataset` and optionally `<name>-parameters` (`dataset-context.js:214-222`).
+- `context` lists the names. Each name gets `<name>-dataset` (`dataset-context.js:156-161`) and optionally `<name>-parameters` (`dataset-context.js:213`).
 - The context object has `parameters` (v1 query parameters, see below), `dataset` (schema and metas, e.g. `datactx.dataset.metas.data_processed` for "Letzte Aktualisierung") and `nhits`.
 - Changing `ctx.parameters` re-runs every Widget on that context. Filters work this way: `ods-select selected-values="datactx.parameters['refine.gemeinde_name']"` writes the refine, and every chart, KPI and table on `datactx` follows.
 - **The context exists only inside its element** (`scope: true`, `dataset-context.js:145`). Put the Widgets that use it inside it.
@@ -130,6 +130,7 @@ Rules the verifier enforces:
   - a conditional such as `cond ? (a = b) : ''`.
 
   Use the guarded default, or put the value in the context's initial parameters (Pattern 3A).
+- `ng-init` is only for constant lists, and `ng-click` only for a toggle (`x = !x`). Neither is a way around these forms. The lint checks only `{{ }}`, so this one is up to you.
 
 ## Chart colour grammar
 
@@ -181,7 +182,7 @@ The verifier reports each habit as error `banned-<id>`. Its matchers live in `ba
 | `q-filter` | `'q': …` in context parameters as a filter | `refine.*` / `exclude.*`, or `ods-adv-analysis-where` |
 | `hard-coded-year` | a literal year in parameters, `-where` or expressions | the latest period from the data (Pattern 3) |
 | `results-repeat-without-max` | `ng-repeat` over `ods-results` without `ods-results-max` (stops at 10 rows) | an explicit `ods-results-max`, or `ods-table` |
-| `native-join` | `join-context` / `local-key` / `remote-key` on a map layer | the join by hand (Pattern 9), keys cast with `''+` |
+| `native-join` | `join-context` on a map layer (with `local-key` / `remote-key`) | the join by hand (Pattern 9), keys cast with `''+` |
 | `domain-attribute` | any `*-domain` attribute (another portal) | data.gr.ch datasets; the Boundary Dataset catalogue |
 | `viewport-height` | `100vh` or any `vh` height, in CSS or `style` | fixed px heights from `--target-height` via `calc()` |
 | `auto-resize` | `auto-resize` / `ods-auto-resize` | a parent with a fixed px height from `--target-height` |

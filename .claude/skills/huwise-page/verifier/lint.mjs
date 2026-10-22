@@ -119,12 +119,14 @@ function bannedRepeats(doc, findings) {
     const variable = attr(el, 'ng-repeat')?.match(/\bin\s+([\w$]+)/)?.[1];
     if (!variable) continue;
     for (const [habit, m] of matchers('repeatWithoutMax'))
-      for (let node = el; node?.attrs; node = node.parentNode)
-        if (attr(node, m.repeatWithoutMax) === variable) {
+      for (let node = el; node?.attrs; node = node.parentNode) {
+        const defined = attr(node, m.repeatWithoutMax);   // '' when written without a value
+        if (defined !== undefined && (defined || m.defaultVariable) === variable) {
           if (attr(node, m.max) === undefined)
             findings.push(habitFinding(habit, 'index.html', node.sourceCodeLocation.attrs[m.repeatWithoutMax]));
           break;
         }
+      }
   }
 }
 
