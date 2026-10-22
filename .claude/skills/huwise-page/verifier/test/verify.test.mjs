@@ -146,6 +146,25 @@ for (const [fixture, description] of allowed) {
   });
 }
 
+// Attributes missing from the Widget family files are warnings: they never fail a Page.
+const warnings = [
+  ['warning-undocumented-element-attribute', 'unit on ods-gauge', 2],
+  ['warning-undocumented-attribute-widget-parameter', 'ods-results-offset next to ods-results', 3],
+];
+for (const [fixture, what, line] of warnings) {
+  test(`${fixture}: ${what} is one warning at index.html:${line}, exit 0`, () => {
+    const r = run(fixture);
+    assert.equal(r.status, 0);
+    assert.deepEqual(summary(r.report), [['undocumented-widget-attribute', 'warning', 'index.html', line]]);
+  });
+}
+
+test('allowed-documented-and-global-attributes: documented, global and AngularJS attributes produce no warning', () => {
+  const r = run('allowed-documented-and-global-attributes');
+  assert.equal(r.status, 0);
+  assert.deepEqual(r.report.findings, []);
+});
+
 // The core reference explains what the lint enforces: every listed Widget and banned habit appears in it.
 test('core.md covers every listed Widget and every banned habit', () => {
   const refs = path.join(here, '..', '..', 'references');
@@ -155,4 +174,44 @@ test('core.md covers every listed Widget and every banned habit', () => {
   assert.equal(widgets.length, count);
   for (const w of widgets) assert.ok(core.includes(`\`${w.markup}\``), `core.md lacks ${w.markup}`);
   for (const h of habits) assert.ok(core.includes(`\`${h.id}\``), `core.md lacks banned habit ${h.id}`);
+});
+
+// The Widget family files: one per family, every listed Widget documented, every claim cited.
+const refsDir = path.join(here, '..', '..', 'references');
+const familyFile = family => path.join(refsDir, 'widgets', `${family}.md`);
+const listedWidgets = JSON.parse(fs.readFileSync(path.join(refsDir, 'widgets.json'), 'utf8')).widgets;
+
+test('family files cover every listed Widget with a parameter table and a Correct usage section', () => {
+  for (const family of new Set(listedWidgets.map(w => w.family))) {
+    const md = fs.readFileSync(familyFile(family), 'utf8');
+    assert.ok(md.includes('\n## Correct usage\n'), `${family}.md lacks a Correct usage section`);
+    for (const w of listedWidgets.filter(x => x.family === family)) {
+      const section = md.split(/^## /m).find(part => part.startsWith(`\`${w.markup}\``));
+      assert.ok(section, `${family}.md lacks a section for ${w.markup}`);
+      assert.match(section, /^\| `[^`]+` \|/m, `${w.markup} has no parameter table row`);
+    }
+  }
+});
+
+test('every Correct usage claim carries a source:line citation', () => {
+  for (const family of new Set(listedWidgets.map(w => w.family))) {
+    const usage = fs.readFileSync(familyFile(family), 'utf8').split('\n## Correct usage\n')[1];
+    for (const bullet of usage.split('\n').filter(l => /^\s*- /.test(l) && !l.trimEnd().endsWith(':')))
+      assert.match(bullet, /\.(js|less):\d+/, `${family}.md: uncited claim: ${bullet.slice(0, 90)}`);
+  }
+});
+
+// The citations point into the owner's gitignored ods-widgets checkout; without it there is nothing to check.
+const checkout = path.join(here, '..', '..', '..', '..', '..', 'ods-widgets', 'src');
+test('family files cite real source lines', { skip: !fs.existsSync(checkout) && 'ods-widgets checkout missing' }, () => {
+  for (const family of new Set(listedWidgets.map(w => w.family))) {
+    const md = fs.readFileSync(familyFile(family), 'utf8');
+    for (const [, file, lines] of md.matchAll(/`(?:ods-widgets\/src\/directives\/)?((?:less\/components\/)?[\w-]+\.(?:js|less)):([\d,-]+)`/g)) {
+      const source = path.join(checkout, file.startsWith('less/') ? file : `directives/${file}`);
+      assert.ok(fs.existsSync(source), `${family}.md cites missing file ${file}`);
+      const count = fs.readFileSync(source, 'utf8').split('\n').length;
+      for (const n of lines.split(/[,-]/).map(Number))
+        assert.ok(n >= 1 && n <= count, `${family}.md cites ${file}:${n}, but the file has ${count} lines`);
+    }
+  }
 });

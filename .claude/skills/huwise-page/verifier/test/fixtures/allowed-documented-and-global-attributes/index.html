@@ -1,0 +1,14 @@
+<div class="page">
+  <!-- Documented parameters, a verified undocumented one (chart-query context), globals and AngularJS directives, data- prefixed forms. -->
+  <ods-dataset-context context="datactx, geoctx" datactx-dataset="dvs_awt_econ_20250203" datactx-parameters="{'disjunctive.gemeinde_name': true}" geoctx-dataset="dvs_awt_regi_202502110">
+    <div data-ods-aggregation="total" data-ods-aggregation-context="datactx" ods-aggregation-function="SUM" ods-aggregation-expression="logiernachte" class="kpi" id="kpi" ng-if="true">
+      <p>{{ total | number:0 }}</p>
+    </div>
+    <div ods-aggregation="a, b" ods-aggregation-a-context="datactx" ods-aggregation-b-context="datactx" ods-aggregation-a-function="SUM" ods-aggregation-b-function="MAX" ods-aggregation-a-expression="x" ods-aggregation-b-expression="x"></div>
+    <ods-chart class="chart" ng-show="true" style="height: 300px">
+      <ods-chart-query context="datactx" field-x="gemeinde_name">
+        <ods-chart-serie expression-y="logiernachte" chart-type="column" function-y="SUM" color="#2D2D8A" aria-label="Diagramm"></ods-chart-serie>
+      </ods-chart-query>
+    </ods-chart>
+  </ods-dataset-context>
+</div>

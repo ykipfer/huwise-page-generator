@@ -1,6 +1,6 @@
 # Core reference: Widgets, contexts and expressions
 
-Always read this file before writing a Page. It holds the rules every Page follows. Per-Widget parameters live in the Widget family files. Source citations point into the owner's gitignored ods-widgets checkout (`ods-widgets/src/…`, version 2.1.2, the version data.gr.ch serves).
+Always read this file before writing a Page. It holds the rules every Page follows. Per-Widget parameters live in the Widget family files (`widgets/<family>.md`, listed below). Source citations point into the owner's gitignored ods-widgets checkout (`ods-widgets/src/…`, version 2.1.2, the version data.gr.ch serves).
 
 The verifier reads the closed Widget list from `widgets.json` and the banned habits from `banned-habits.json`. This file explains them. If you change either JSON file, update this file too: a test checks that every Widget and habit id appears here.
 
@@ -21,6 +21,24 @@ A Page uses **only** these 18 Widgets. Anything else with an `ods-` name is a li
 - Platform-only directives (`ods-tabs`, `ods-pane`, `ods-import-script`, `ods-agent`, …) are not in the list and are never used.
 - If a Page Request needs a Widget that is missing, flag it in the plan list. It joins only through the deliberate add step: write the entry, prove it renders through the verifier, then add it to `widgets.json`. Never improvise one.
 - When this reference and the family file are both silent, you may read `ods-widgets/src` for a **listed** Widget. Report the gap to the owner and propose an addition; don't edit the reference yourself.
+
+## Widget family files
+
+Read the family file of every Widget you use before writing it. Each holds the parameter tables (generated once from the ngdoc, then maintained by hand) and a hand-written "Correct usage" section with `<source file>:<line>` citations. It records where the docs and the source disagree.
+
+| Family | File | Widgets |
+|---|---|---|
+| context | `widgets/context.md` | `ods-dataset-context` |
+| data | `widgets/data.md` | `ods-results`, `ods-facet-results`, `ods-adv-analysis`, `ods-aggregation`, `ods-table`, `ods-gauge` |
+| filter | `widgets/filter.md` | `ods-select`, `ods-text-search` |
+| chart | `widgets/chart.md` | `ods-chart`, `ods-chart-query`, `ods-chart-serie` |
+| map | `widgets/map.md` | `ods-map`, `ods-map-layer`, `ods-color-gradient`, `ods-legend` |
+| tabs | `widgets/tabs.md` | `ods-simple-tabs`, `ods-simple-tab` |
+
+- The verifier reports an attribute on a listed Widget that is in none of its tables as **warning** `undocumented-widget-attribute`. A warning never fails a Page: some real parameters are missing from the ngdoc. Check the source before you rely on one, and prefer a documented attribute.
+- A parameter verified in the source but missing from the ngdoc goes into the Widget's "Real but undocumented" table with its source line. That stops the warning. Don't add a row you haven't read in the source.
+- Typical traps the files record: boolean-looking attributes compared as strings (`single-y-axis="false"` is on), replace-mode Widgets that swap their tag for an `odswidget-*` root (so CSS targets that class), and parameters the ngdoc leaves out (`context` on `ods-chart-query`).
+- After a Huwise upgrade, re-check the citations: the test `family files cite real source lines` fails when a cited line no longer exists in the checkout.
 
 ## Contexts
 

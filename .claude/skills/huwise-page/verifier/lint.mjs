@@ -3,6 +3,7 @@
 //   markup (comments are ignored); its CSS check is a plain text search.
 // - the closed Widget list and the banned habits, read from ../references/ so that knowledge and lint
 //   never drift apart.
+// - warnings (never fail a Page): attributes on a listed Widget that its family file does not document.
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseFragment } from 'parse5';
@@ -28,11 +29,50 @@ function unlistedWidgetAttrs(el) {
   return unknown.filter(n => !unknown.some(u => n.name.startsWith(`${u.name}-`))).map(n => n.raw);
 }
 
+// Documented attributes per Widget, read from the first column of the parameter tables in the family
+// files (references/widgets/*.md): every table row under a "## `ods-…`" heading. `<name>` in a row
+// stands for any name (<context>-dataset, ods-aggregation-<variablename>-context).
+function documentedAttributes() {
+  const dir = path.join(REFERENCES, 'widgets');
+  const byWidget = new Map(WIDGETS.map(w => [w.markup, []]));
+  for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.md'))) {
+    let markup = null;
+    for (const line of fs.readFileSync(path.join(dir, file), 'utf8').split('\n')) {
+      const heading = line.match(/^## `([^`]+)`/);
+      if (heading) markup = heading[1];
+      else if (line.startsWith('## ')) markup = null;
+      const row = markup && line.match(/^\| `([^`]+)` \|/);
+      if (row && byWidget.has(markup))
+        byWidget.get(markup).push(new RegExp(`^${row[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/<[^>]+>/g, '[a-z0-9-]+')}$`));
+    }
+  }
+  return byWidget;
+}
+const DOCUMENTED = documentedAttributes();
+// Attributes that belong to the HTML element or to AngularJS, not to a Widget.
+const NOT_WIDGET_ATTR = /^(class|style|id|hidden|title|lang|role|tabindex|translate|aria-.+|ng-.+|on-.+)$/;
+
+// Attributes on a listed Widget that no table of its family file documents. A Widget used as a tag owns
+// the element's unprefixed attributes; an attribute-only Widget owns the attributes prefixed with its
+// name (ods-results-max). Names are compared without the data-/x- prefix; findings keep the written name.
+function undocumentedWidgetAttrs(el, ignored) {
+  const names = el.attrs.map(a => ({ raw: a.name, name: a.name.replace(/^(data|x)-/, '') }));
+  const has = w => names.some(n => n.name === w.markup);
+  const owners = WIDGETS.filter(w => w.form === 'attribute' && has(w));
+  const hosts = WIDGETS.filter(w => w.form !== 'attribute' && (w.markup === el.tagName || (w.form === 'both' && has(w))));
+  const documented = (w, name) => name === w.markup || DOCUMENTED.get(w.markup).some(re => re.test(name));
+  return names.filter(n => !ignored.has(n.raw) && !NOT_WIDGET_ATTR.test(n.name)).filter(n => {
+    const owner = owners.filter(w => n.name.startsWith(`${w.markup}-`)).sort((a, b) => b.markup.length - a.markup.length)[0];
+    if (owner) return !documented(owner, n.name);
+    return hosts.length > 0 && !n.name.startsWith('ods-') && !hosts.some(w => documented(w, n.name));
+  }).map(n => n.raw);
+}
+
 const REFUSED_TAGS = ['style', 'script', 'form', 'object', 'iframe'];
 
-const finding = (rule, file, loc, message) => ({
+const finding = (rule, file, loc, message, severity = 'error') => ({
   rule,
-  severity: 'error',
+  severity,
   location: { file, line: loc.startLine, column: loc.startCol },
   message,
 });
@@ -217,8 +257,12 @@ function lintHtml(html) {
         if (!el.attrs.some(a => a.name === name && a.value === value))
           findings.push(finding('required-widget-attribute', 'index.html', loc, `${markup} needs ${name}="${value}" (references/widgets.json)`));
     }
-    for (const name of unlistedWidgetAttrs(el).filter(n => !claimed.has(n)))
+    const unlisted = unlistedWidgetAttrs(el);
+    for (const name of unlisted.filter(n => !claimed.has(n)))
       findings.push(finding('unlisted-widget', 'index.html', loc.attrs?.[name] ?? loc, `"${name}" is not on the closed Widget list (references/widgets.json)`));
+    for (const name of undocumentedWidgetAttrs(el, new Set([...claimed, ...unlisted])))
+      findings.push(finding('undocumented-widget-attribute', 'index.html', loc.attrs?.[name] ?? loc,
+        `"${name}" is not documented in the Widget family file (references/widgets/). It may still work; check the ods-widgets source before relying on it`, 'warning'));
     for (const { name, value } of el.attrs) {
       const attrLoc = loc.attrs?.[name] ?? loc;
       if (/^on/.test(name) && !el.tagName.startsWith('ods-'))
