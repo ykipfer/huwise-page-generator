@@ -86,6 +86,7 @@ test('a Page folder without stylesheet.css passes with exit 0', () => {
 const lintErrors = [
   ['unlisted-widget-element', 'unlisted-widget', 'index.html', 2],
   ['unlisted-widget-attribute', 'unlisted-widget', 'index.html', 2],
+  ['unlisted-widget-data-prefix', 'unlisted-widget', 'index.html', 2],
   ['map-without-scroll-wheel-zoom', 'required-widget-attribute', 'index.html', 2],
   ['map-scroll-wheel-zoom-true', 'required-widget-attribute', 'index.html', 2],
   ['banned-ods-tabs', 'banned-ods-tabs', 'index.html', 2],

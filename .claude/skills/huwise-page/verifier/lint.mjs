@@ -18,12 +18,14 @@ const WIDGET_ATTRS = new Set(WIDGETS.filter(w => w.form !== 'element').map(w => 
 
 // ods-* attributes that are neither a listed attribute Widget nor a parameter of one on the same
 // element (ods-results-max next to ods-results). An unlisted Widget's own parameters
-// (ods-analysis-x next to ods-analysis) are folded into its finding.
+// (ods-analysis-x next to ods-analysis) are folded into its finding. AngularJS also accepts the
+// data-/x- prefixed forms, so names are compared without them; findings keep the written name.
 function unlistedWidgetAttrs(el) {
-  const names = el.attrs.map(a => a.name).filter(n => n.startsWith('ods-'));
-  const present = names.filter(n => WIDGET_ATTRS.has(n));
-  const unknown = names.filter(n => !WIDGET_ATTRS.has(n) && !present.some(w => n.startsWith(`${w}-`)));
-  return unknown.filter(n => !unknown.some(u => n.startsWith(`${u}-`)));
+  const names = el.attrs.map(a => ({ raw: a.name, name: a.name.replace(/^(data|x)-/, '') }))
+    .filter(n => n.name.startsWith('ods-'));
+  const present = names.filter(n => WIDGET_ATTRS.has(n.name)).map(n => n.name);
+  const unknown = names.filter(n => !WIDGET_ATTRS.has(n.name) && !present.some(w => n.name.startsWith(`${w}-`)));
+  return unknown.filter(n => !unknown.some(u => n.name.startsWith(`${u.name}-`))).map(n => n.raw);
 }
 
 const REFUSED_TAGS = ['style', 'script', 'form', 'object', 'iframe'];

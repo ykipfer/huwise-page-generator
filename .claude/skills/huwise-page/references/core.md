@@ -187,4 +187,6 @@ The verifier reports each habit as error `banned-<id>`. Its matchers live in `ba
 | `viewport-height` | `100vh` or any `vh` height, in CSS or `style` | fixed px heights from `--target-height` via `calc()` |
 | `auto-resize` | `auto-resize` / `ods-auto-resize` | a parent with a fixed px height from `--target-height` |
 
+`hard-coded-year` treats any number from 1900 to 2099 in `*-parameters`, `-where` or `ng-init` as a year. A threshold such as `anzahl >= 2000` in `ods-adv-analysis-where` is reported too. Avoid such thresholds. If one is truly needed, report the false positive to the owner instead of working around the lint.
+
 Lint is the only check for platform-only CSS: the render harness loads the portal's `front-angular.css`, so `.ods-box` and the Bootstrap grid would look fine there.
