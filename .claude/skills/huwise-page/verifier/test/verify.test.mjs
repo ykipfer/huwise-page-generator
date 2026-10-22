@@ -81,3 +81,95 @@ test('a Page folder without stylesheet.css passes with exit 0', () => {
   assert.equal(r.status, 0);
   assert.deepEqual(r.report.findings, []);
 });
+
+// Lint rules from the skill references (closed Widget list, banned habits, side effects): one seeded fault each.
+const lintErrors = [
+  ['unlisted-widget-element', 'unlisted-widget', 'index.html', 2],
+  ['unlisted-widget-attribute', 'unlisted-widget', 'index.html', 2],
+  ['map-without-scroll-wheel-zoom', 'required-widget-attribute', 'index.html', 2],
+  ['map-scroll-wheel-zoom-true', 'required-widget-attribute', 'index.html', 2],
+  ['banned-ods-tabs', 'banned-ods-tabs', 'index.html', 2],
+  ['banned-native-join', 'banned-native-join', 'index.html', 2],
+  ['banned-domain-attribute', 'banned-domain-attribute', 'index.html', 2],
+  ['banned-auto-resize', 'banned-auto-resize', 'index.html', 2],
+  ['banned-ods-auto-resize', 'banned-auto-resize', 'index.html', 2],
+  ['banned-range-custom', 'banned-range-custom', 'index.html', 2],
+  ['banned-ods-box', 'banned-ods-box', 'index.html', 2],
+  ['banned-svelte-class', 'banned-svelte-class', 'index.html', 2],
+  ['banned-bootstrap-grid', 'banned-bootstrap-grid', 'index.html', 2],
+  ['banned-root-shared', 'banned-root-shared', 'index.html', 2],
+  ['banned-current-language', 'banned-current-language', 'index.html', 2],
+  ['banned-ods-box-css', 'banned-ods-box', 'stylesheet.css', 2],
+  ['banned-svelte-class-css', 'banned-svelte-class', 'stylesheet.css', 2],
+  ['banned-viewport-height', 'banned-viewport-height', 'stylesheet.css', 2],
+  ['banned-viewport-height-inline', 'banned-viewport-height', 'index.html', 2],
+  ['banned-q-filter', 'banned-q-filter', 'index.html', 2],
+  ['banned-hard-coded-year', 'banned-hard-coded-year', 'index.html', 2],
+  ['banned-hard-coded-year-where', 'banned-hard-coded-year', 'index.html', 2],
+  ['banned-hard-coded-year-expression', 'banned-hard-coded-year', 'index.html', 2],
+  ['banned-results-repeat-without-max', 'banned-results-repeat-without-max', 'index.html', 2],
+  ['banned-results-repeat-without-max-same-element', 'banned-results-repeat-without-max', 'index.html', 2],
+  ['banned-hand-built-tabs', 'banned-hand-built-tabs', 'index.html', 2],
+  ['side-effect-scope-variable', 'side-effect', 'index.html', 2],
+  ['side-effect-not-hidden', 'side-effect', 'index.html', 2],
+  ['side-effect-conditional', 'side-effect', 'index.html', 2],
+  ['side-effect-in-attribute', 'side-effect', 'index.html', 2],
+  ['side-effect-two-way-copy', 'side-effect', 'index.html', 3],
+  ['side-effect-two-sources', 'side-effect', 'index.html', 3],
+];
+for (const [fixture, rule, file, line] of lintErrors) {
+  test(`${fixture}: exactly one ${rule} error at ${file}:${line}, exit 1`, () => {
+    const r = run(fixture);
+    assert.equal(r.status, 1);
+    assert.deepEqual(summary(r.report), [[rule, 'error', file, line]]);
+  });
+}
+
+test('every Widget on the closed list, in element and attribute form, passes', () => {
+  const r = run('allowed-listed-widgets');
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+});
+
+test('classes that only contain a banned class name pass', () => {
+  const r = run('allowed-class-lookalikes');
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+});
+
+test('banned names inside a CSS comment pass', () => {
+  const r = run('allowed-banned-names-in-css-comment');
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+});
+
+test('year-like numbers in prose, limits and dataset IDs pass', () => {
+  const r = run('allowed-year-like-numbers');
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+});
+
+test('a single ng-click toggle is not a hand-built tab bar and passes', () => {
+  const r = run('allowed-ng-click-toggle');
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+});
+
+for (const fixture of ['allowed-side-effect-guarded-default', 'allowed-side-effect-one-way-copy']) {
+  test(`${fixture}: the allowed side-effect form passes`, () => {
+    const r = run(fixture);
+    assert.deepEqual(r.report.findings, []);
+    assert.equal(r.status, 0);
+  });
+}
+
+// The core reference explains what the lint enforces: every listed Widget and banned habit appears in it.
+test('core.md covers every listed Widget and every banned habit', () => {
+  const refs = path.join(here, '..', '..', 'references');
+  const core = fs.readFileSync(path.join(refs, 'core.md'), 'utf8');
+  const { widgets, count } = JSON.parse(fs.readFileSync(path.join(refs, 'widgets.json'), 'utf8'));
+  const { habits } = JSON.parse(fs.readFileSync(path.join(refs, 'banned-habits.json'), 'utf8'));
+  assert.equal(widgets.length, count);
+  for (const w of widgets) assert.ok(core.includes(`\`${w.markup}\``), `core.md lacks ${w.markup}`);
+  for (const h of habits) assert.ok(core.includes(`\`${h.id}\``), `core.md lacks banned habit ${h.id}`);
+});

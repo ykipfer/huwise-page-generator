@@ -1,0 +1,8 @@
+<div class="page">
+<div ods-adv-analysis="latest" ods-adv-analysis-context="datactx" ods-adv-analysis-select="max(jahr) as jahr">
+  <span style="display: none">
+    {{ datactx.parameters['refine.jahr'] =
+       datactx.parameters['refine.jahr'] || latest[0].jahr; '' }}
+  </span>
+</div>
+</div>

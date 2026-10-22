@@ -1,0 +1,2 @@
+.page { --target-height: 800px; }
+.page .map { height: 100vh; }

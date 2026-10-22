@@ -1,0 +1,3 @@
+.page { --target-height: 800px; }
+/* never .ods-box, .svelte-x or 100vh */
+.page .map { height: calc(var(--target-height) - 120px); }

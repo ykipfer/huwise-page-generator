@@ -1,0 +1,30 @@
+{
+  "about": "Closed Widget list. A Page may use only these Widgets. The verifier reads this file; core.md explains the rule. A Widget joins only through the deliberate add step.",
+  "odsWidgets": "2.1.2 (local checkout ods-widgets master 2d27149)",
+  "enumeration": "Enumerated 2026-10-22: every `.directive('ods…')` registered in ods-widgets/src (84 names) was searched for as an element or attribute name in page_examples/*/index.html (8 Example Pages). 19 directives are in use; odsAnalysis is removed (wrong documented default variable, v1 analyze API, odsFacetResults and odsAggregation do its jobs better), which leaves 18. odsGauge and odsTextSearch are in use and therefore listed, although the #16 family list does not name them. `form` follows each directive's `restrict` in the source: element (E), attribute (A) or both (EA).",
+  "count": 18,
+  "widgets": [
+    { "name": "odsAdvAnalysis", "markup": "ods-adv-analysis", "form": "attribute", "family": "data", "source": "src/directives/advanced-analysis.js:19" },
+    { "name": "odsAggregation", "markup": "ods-aggregation", "form": "attribute", "family": "data", "source": "src/directives/aggregation.js:6" },
+    { "name": "odsChart", "markup": "ods-chart", "form": "both", "family": "chart", "source": "src/directives/highcharts.js:1896" },
+    { "name": "odsChartQuery", "markup": "ods-chart-query", "form": "element", "family": "chart", "source": "src/directives/highcharts.js:2181" },
+    { "name": "odsChartSerie", "markup": "ods-chart-serie", "form": "element", "family": "chart", "source": "src/directives/highcharts.js:2314" },
+    { "name": "odsColorGradient", "markup": "ods-color-gradient", "form": "attribute", "family": "map", "source": "src/directives/analysis.js:215" },
+    { "name": "odsDatasetContext", "markup": "ods-dataset-context", "form": "both", "family": "context", "source": "src/directives/dataset-context.js:6" },
+    { "name": "odsFacetResults", "markup": "ods-facet-results", "form": "attribute", "family": "data", "source": "src/directives/facet-results.js:6" },
+    { "name": "odsGauge", "markup": "ods-gauge", "form": "element", "family": "data", "source": "src/directives/gauge.js:6" },
+    { "name": "odsLegend", "markup": "ods-legend", "form": "element", "family": "map", "source": "src/directives/legend.js:6" },
+    { "name": "odsMap", "markup": "ods-map", "form": "both", "family": "map", "source": "src/directives/map.js:42",
+      "requiredAttributes": { "scroll-wheel-zoom": "false" } },
+    { "name": "odsMapLayer", "markup": "ods-map-layer", "form": "both", "family": "map", "source": "src/directives/map.js:1395" },
+    { "name": "odsResults", "markup": "ods-results", "form": "attribute", "family": "data", "source": "src/directives/results.js:6" },
+    { "name": "odsSelect", "markup": "ods-select", "form": "element", "family": "filter", "source": "src/directives/select.js:66" },
+    { "name": "odsSimpleTab", "markup": "ods-simple-tab", "form": "element", "family": "tabs", "source": "src/directives/simple-tabs.js:74" },
+    { "name": "odsSimpleTabs", "markup": "ods-simple-tabs", "form": "element", "family": "tabs", "source": "src/directives/simple-tabs.js:5" },
+    { "name": "odsTable", "markup": "ods-table", "form": "element", "family": "data", "source": "src/directives/table.js:6" },
+    { "name": "odsTextSearch", "markup": "ods-text-search", "form": "element", "family": "filter", "source": "src/directives/text-search.js:5" }
+  ],
+  "excluded": [
+    { "name": "odsAnalysis", "reason": "Documented default variable is wrong (results, not analysis), calls the v1 analyze API; use odsFacetResults or odsAggregation." }
+  ]
+}

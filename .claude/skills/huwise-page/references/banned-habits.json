@@ -1,0 +1,170 @@
+{
+  "about": "Banned habits: constructs copied from older Pages that break, rot, or only work on the platform. The verifier reports each match as error `banned-<id>`; core.md explains each one. Matchers: `element` (tag name), `attribute` (attribute-name regex), `attributeValue` (value regex, optionally limited by an `attributes` name regex), `class` (regex on whole class tokens), `html` (regex on text and attribute values, comments ignored), `css` (regex on stylesheet.css, comments ignored), `parameterKey` (regex on the keys of a `*-parameters` object), `repeatWithoutMax` (an ng-repeat over the variable of that attribute Widget, on the same element or an ancestor, without the `max` attribute), `handBuiltTabs` (two or more elements whose attribute of that name sets the same variable to different literals).",
+  "habits": [
+    {
+      "id": "ods-tabs",
+      "habit": "<ods-tabs> is a platform-only directive, not in the Page bundle",
+      "replacement": "ods-simple-tabs with ods-simple-tab",
+      "match": [
+        {
+          "element": "ods-tabs"
+        }
+      ]
+    },
+    {
+      "id": "native-join",
+      "habit": "The native map join (join-context with local-key/remote-key) is a server-side v1 analyze call that cannot carry the boundary context's filters and fails silently on mismatched key types",
+      "replacement": "the join by hand: ods-color-gradient (or a value-to-colour map) into color-categories + color-by-field on the boundary layer, keys cast with ''+",
+      "match": [
+        {
+          "attribute": "^join-context$"
+        }
+      ]
+    },
+    {
+      "id": "domain-attribute",
+      "habit": "A *-domain attribute loads data from another portal; Pages use data.gr.ch only",
+      "replacement": "a data.gr.ch dataset, for boundaries an entry of the Boundary Dataset catalogue",
+      "match": [
+        {
+          "attribute": "-domain$"
+        }
+      ]
+    },
+    {
+      "id": "auto-resize",
+      "habit": "auto-resize makes a Widget follow the iframe height, which breaks the fixed Target Height (ADR 0002)",
+      "replacement": "a parent with a fixed px height derived from --target-height",
+      "match": [
+        {
+          "attribute": "^(ods-)?auto-resize$"
+        }
+      ]
+    },
+    {
+      "id": "range-custom",
+      "habit": "color=\"range-custom\" resolves to nothing without the portal's chartColors and falls back to the default palette",
+      "replacement": "the CI category colours as a JSON array or hex value in color, or category-colors on ods-chart-query",
+      "match": [
+        {
+          "attributeValue": "\\brange-custom\\b"
+        }
+      ]
+    },
+    {
+      "id": "ods-box",
+      "habit": "The ods-box class is platform-only CSS (front-angular.css) and does not exist in the CI base stylesheet",
+      "replacement": "the card classes of the CI base stylesheet",
+      "match": [
+        {
+          "class": "^ods-box$"
+        },
+        {
+          "css": "\\.ods-box\\b"
+        }
+      ]
+    },
+    {
+      "id": "svelte-class",
+      "habit": "svelte-* classes are copied from the portal's generated markup and change with every portal build",
+      "replacement": "the classes of the CI base stylesheet",
+      "match": [
+        {
+          "class": "^svelte-"
+        },
+        {
+          "css": "\\.svelte-"
+        }
+      ]
+    },
+    {
+      "id": "bootstrap-grid",
+      "habit": "The Bootstrap grid (container, row, col-*) is platform-only CSS from front-angular.css",
+      "replacement": "the layout shapes of the CI base stylesheet",
+      "match": [
+        {
+          "class": "^(container(-fluid)?|row|col(-(xs|sm|md|lg|xl))?(-offset)?-\\d{1,2})$"
+        }
+      ]
+    },
+    {
+      "id": "root-shared",
+      "habit": "$root.shared passes state through the root scope, outside every context, and goes stale",
+      "replacement": "context parameters: read ctx.parameters['refine.x'] where the context is in scope, or copy one filter with the one-way copy",
+      "match": [
+        {
+          "html": "\\$root\\.shared\\b"
+        }
+      ]
+    },
+    {
+      "id": "current-language",
+      "habit": "The currentLanguage filter is platform-only and does not exist in ods-widgets; Pages are German only",
+      "replacement": "German text written directly into the Page",
+      "match": [
+        {
+          "html": "\\bcurrentLanguage\\b"
+        }
+      ]
+    },
+    {
+      "id": "viewport-height",
+      "habit": "Viewport heights (100vh and other vh units) follow the iframe instead of the fixed Target Height (ADR 0002)",
+      "replacement": "fixed px heights derived from --target-height with calc()",
+      "match": [
+        {
+          "css": "(?<![\\w.-])\\d*\\.?\\d+[dsl]?vh\\b"
+        },
+        {
+          "attributeValue": "(?<![\\w.-])\\d*\\.?\\d+[dsl]?vh\\b",
+          "attributes": "^style$"
+        }
+      ]
+    },
+    {
+      "id": "q-filter",
+      "habit": "A q (full-text query) parameter used as a filter matches text anywhere in a record, is translated to qv1 for ODSQL Widgets, and silently over- or under-matches",
+      "replacement": "refine.<field> / exclude.<field> context parameters, or ods-adv-analysis-where for computed conditions",
+      "match": [
+        {
+          "parameterKey": "^q(\\..+)?$"
+        }
+      ]
+    },
+    {
+      "id": "hard-coded-year",
+      "habit": "A hard-coded year or period goes stale when the dataset is updated",
+      "replacement": "the latest period computed from the data (Pattern 3: facet sorted -num, or ods-adv-analysis max(…) with the guarded default)",
+      "match": [
+        {
+          "attributeValue": "(?<!\\d)(19|20)\\d{2}(?!\\d)",
+          "attributes": "-parameters$|-where$|^ng-init$"
+        },
+        {
+          "html": "(['\"])(19|20)\\d{2}\\1|[=!<>]=*\\s*(19|20)\\d{2}(?!\\d)"
+        }
+      ]
+    },
+    {
+      "id": "results-repeat-without-max",
+      "habit": "ods-results fetches 10 records by default, so an ng-repeat over it silently stops at 10 rows",
+      "replacement": "an explicit ods-results-max on the ods-results element, or ods-table for long lists",
+      "match": [
+        {
+          "repeatWithoutMax": "ods-results",
+          "max": "ods-results-max"
+        }
+      ]
+    },
+    {
+      "id": "hand-built-tabs",
+      "habit": "Tabs built by hand with ng-click and ng-if/ng-show skip the tab bar styling, keyboard handling and the map rebuild of ods-simple-tabs",
+      "replacement": "ods-simple-tabs with one ods-simple-tab per Visualization (Pattern 8)",
+      "match": [
+        {
+          "handBuiltTabs": "ng-click"
+        }
+      ]
+    }
+  ]
+}
