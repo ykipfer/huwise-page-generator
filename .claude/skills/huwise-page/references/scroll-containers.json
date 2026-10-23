@@ -1,0 +1,4 @@
+{
+  "note": "Selectors of the scroll containers the base stylesheet allows. Overflow inside them is not reported by the render stage. These are STAND-INS until the base stylesheet ticket fills in the real selectors; the render fixtures use them.",
+  "selectors": [".table-scroll", ".tabs-scroll"]
+}

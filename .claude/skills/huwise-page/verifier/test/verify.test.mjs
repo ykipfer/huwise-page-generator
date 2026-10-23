@@ -9,7 +9,8 @@ const here = import.meta.dirname;
 const CLI = path.join(here, '..', 'verify.mjs');
 
 // Copy a fixture into a temp dir so runs never write into the repo.
-function run(fixture, extraArgs = ['--target-height', '800', '--embed-size', 'gross']) {
+// Lint tests stay offline: the render stage has its own tests in render.test.mjs.
+function run(fixture, extraArgs = ['--target-height', '800', '--embed-size', 'gross', '--skip-render']) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-'));
   fs.cpSync(path.join(here, 'fixtures', fixture), dir, { recursive: true });
   const r = spawnSync('node', [CLI, dir, ...extraArgs], { encoding: 'utf8' });
