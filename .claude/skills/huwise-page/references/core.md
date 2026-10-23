@@ -182,6 +182,9 @@ data.gr.ch serves **Highcharts 6.1.4** (2018), not the 11.1.0 that ods-widgets 2
 - Every `ods-map` carries `scroll-wheel-zoom="false"`, so the map never traps the reader's scrolling on the Host Page (`map.js:328`; lint rule `required-widget-attribute`).
 - Join data to boundaries by hand: `ods-color-gradient`, then `color-categories` + `color-by-field`. Never use the native join.
 - Boundaries come only from the Boundary Dataset catalogue on data.gr.ch (`boundary-catalogue.md`). The dry-run checks that every data key has a shape.
+- Map Patterns: 9 choropleth, 10 tooltip from a nested context, 11 tooltip from the layer's own record, 12 point map with category colours, 13 boundary outlines (`patterns/09-…` to `13-…`, proven instance Pages in `patterns/instances/`).
+- A tooltip (the content of `ods-map-layer`) sees only `record` and the contexts declared inside it, never the Page's scope.
+- Render signals (errors): `map-no-features` (nothing drawn) and `map-too-small` (under 280px). The render stage also clicks the first shape or marker of every map that has a tooltip template (state "map shape click") and checks the tooltip's Widgets there. A map in `ods-simple-tabs` keeps the default rebuild behaviour and is checked once its tab is explored.
 
 ## Banned habits
 

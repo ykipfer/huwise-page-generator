@@ -12,7 +12,8 @@ const ATTRS = new Map(WIDGETS.filter(w => w.form !== 'element').map(w => [w.mark
 const unprefixed = name => name.replace(/^(data|x)-/, '');
 
 /** Returns { html, elements: { [id]: { kind, label, line } }, repeats: [expression] }.
- *  kind is a Widget's markup name ('ods-chart') or 'ng-click'; click holds the ng-click expression, if any. */
+ *  kind is a Widget's markup name ('ods-chart') or 'ng-click'; click holds the ng-click expression, if any;
+ *  tooltip marks a map layer that has a tooltip template. */
 export function annotate(html) {
   const elements = {};
   const repeats = [];
@@ -33,6 +34,8 @@ export function annotate(html) {
           label: widget ? (TAGS.has(node.nodeName) ? `<${node.nodeName}>` : `${widget.markup}="${attr(widget.markup)}"`) : `ng-click="${click}"`,
           line: loc.startLine,
           click: click ?? null,
+          // a map layer with element content: the content is its tooltip template, rendered only on a click
+          tooltip: node.nodeName === 'ods-map-layer' && (node.childNodes ?? []).some(c => c.tagName),
         };
         inserts.push([loc.startOffset + 1 + node.nodeName.length, ` data-verify-id="${id}"`]);
       }

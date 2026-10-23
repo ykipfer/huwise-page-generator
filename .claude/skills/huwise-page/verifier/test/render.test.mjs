@@ -12,9 +12,15 @@ const CLI = path.join(here, '..', 'verify.mjs');
 // One cache dir for the whole file, so the platform scrape happens once.
 const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-cache-'));
 
-function run(fixture, extraArgs = [], { cache = cacheDir } = {}) {
+const BASE_CSS = path.join(here, '..', '..', 'references', 'base-stylesheet.css');
+function run(fixture, extraArgs = [], { cache = cacheDir, withBase = fixture.startsWith('render-map') } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-render-'));
   fs.cpSync(path.join(here, 'fixtures', fixture), dir, { recursive: true });
+  if (withBase) {
+    // Fixtures that need the CI areas (map, chart) keep only their Target Height; the base stylesheet comes first.
+    const css = path.join(dir, 'stylesheet.css');
+    fs.writeFileSync(css, fs.readFileSync(BASE_CSS, 'utf8') + '\n' + fs.readFileSync(css, 'utf8'));
+  }
   const args = ['--target-height', '800', '--embed-size', 'gross', '--no-dry-run', ...extraArgs];
   const r = spawnSync('node', [CLI, dir, ...args], { encoding: 'utf8', env: { ...process.env, VERIFIER_CACHE_DIR: cache } });
   const report = JSON.parse(fs.readFileSync(path.join(dir, 'verifier-output', 'report.json'), 'utf8'));
@@ -147,4 +153,52 @@ test('the clean Page with tabs, an ng-click and an ods-select passes in every st
     assert.ok(fs.statSync(path.join(r.dir, 'verifier-output', s.screenshot)).size > 0);
   }
   assert.match(fs.readFileSync(path.join(r.dir, 'verifier-output', 'report.md'), 'utf8'), /tab "Diagramm"/);
+});
+
+// ---------- map signals (#27) ----------
+test('a map with a layer that loads shapes passes, with no console error', () => {
+  const r = run('render-map-clean', ['--iterate']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual(r.report.findings, []);
+});
+
+test('a map that loads no features fails with exactly that finding', () => {
+  const r = run('render-map-no-features', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['map-no-features', 'error']]);
+});
+
+test('a map under 280px fails with exactly that finding', () => {
+  const r = run('render-map-too-small', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['map-too-small', 'error']]);
+  assert.match(r.report.findings[0].message, /200px/);
+});
+
+test('boundary shapes without data render in the "other" grey without an error', () => {
+  const r = run('render-map-shapes-without-data', ['--iterate']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual(r.report.findings, []);
+});
+
+test('a map inside a tab passes once the tab is explored', () => {
+  const r = run('render-map-in-tab-clean', ['--iterate']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual(r.report.findings, []);
+  assert.deepEqual(stateLabels(r), ['initial', 'tab "Karte"']);
+});
+
+test('a map tooltip is explored by clicking a shape, and passes when its nested context loads', () => {
+  const r = run('render-map-tooltip-clean', ['--iterate']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual(r.report.findings, []);
+  assert.deepEqual(stateLabels(r), ['initial', 'map shape click']);
+});
+
+test('a map tooltip whose nested context finds no record fails in the click state only', () => {
+  const r = run('render-map-tooltip-broken', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['widget-variable', 'error']]);
+  assert.equal(r.report.findings[0].location.state, 'map shape click');
+  assert.deepEqual(stateOf(r, 'initial').findings, []);
 });
