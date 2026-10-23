@@ -1,6 +1,8 @@
 # files
 ods-widgets/
 page_examples/
+# Page Sketch preview wrapper (the sketch's index.html and stylesheet.css are tracked)
+pages/*/preview.html
 # verifier output (reports, screenshots) inside Page folders
 verifier-output/
 # verifier dependencies and agent worktrees
