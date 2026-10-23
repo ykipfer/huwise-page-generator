@@ -212,5 +212,5 @@ Lint is the only check for platform-only CSS: the render harness loads the porta
 ## Layout and style
 
 - Every Page starts from `base-stylesheet.css` (CI colours, font, cards, layout shapes, heights derived from `--target-height`) and a skeleton in `skeleton/<shape>/`. `rulebook.md` holds what CSS cannot enforce: chart colours, status colours, content rules.
-- Pattern files live in `patterns/`. Pattern 15 (`patterns/15-footer.md`) is mandatory on every Page.
+- Pattern files live in `patterns/`. Pattern 15 (`patterns/15-footer.md`) is mandatory on every Page. Patterns 5 to 8 (`05-kpi.md`, `06-chart.md`, `07-table.md`, `08-tabs.md`) each have a verified instance Page in `patterns/instances/<pattern>/`.
 - Layout lint errors: `missing-footer` (no element with the footer class), `no-fixed-height` (an `ods-chart` or `ods-map` whose direct parent has no fixed height; use `hw-map-area`, `hw-chart-area` or `hw-table-area`), `fixed-width-too-wide` (a `width` or `min-width` above 375px outside `hw-table-scroll` and `hw-tabs`). The verifier reads the class names from `base-stylesheet.json` and `scroll-containers.json`.

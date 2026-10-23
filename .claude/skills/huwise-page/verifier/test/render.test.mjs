@@ -87,6 +87,12 @@ test('overflow only inside an allowed scroll container passes', () => {
   assert.deepEqual(r.report.findings, []);
 });
 
+test('content taller than the Target Height but clipped by a scroll container passes', () => {
+  const r = run('render-tall-clipped-in-scroll');
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual(r.report.findings, []);
+});
+
 // ---------- Widget signals and state exploration (#23) ----------
 const stateLabels = r => r.report.stages.render.states.map(s => s.label);
 const stateOf = (r, label) => r.report.stages.render.states.find(s => s.label === label);

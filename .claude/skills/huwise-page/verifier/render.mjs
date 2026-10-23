@@ -150,7 +150,17 @@ const inspectFrame = ({ allowed, chartIds, repeats }) => {
   // Content height: the lowest edge inside the Page plus the portal wrapper's bottom margin. The wrapper's
   // own min-height is a harness artefact (the real iframe body has no fixed height), so scrollHeight is not used.
   const main = document.querySelector('main');
-  const bottoms = [...document.querySelectorAll('.page-layout, .page-layout *')].map(el => el.getBoundingClientRect().bottom + window.scrollY);
+  // An element's bottom counts only where it is visible: content clipped by a scrolling or hidden-overflow
+  // ancestor (a table inside hw-table-scroll) adds no height to the Page.
+  const visibleBottom = el => {
+    let bottom = el.getBoundingClientRect().bottom;
+    for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+      const o = getComputedStyle(a);
+      if (o.display !== 'contents' && o.overflowY !== 'visible') bottom = Math.min(bottom, a.getBoundingClientRect().bottom);
+    }
+    return bottom + window.scrollY;
+  };
+  const bottoms = [...document.querySelectorAll('.page-layout, .page-layout *')].map(visibleBottom);
   const out = { text: [], signals: [], present: [], overflow: 0, offenders: [], height: Math.ceil(Math.max(0, ...bottoms) + (main ? parseFloat(getComputedStyle(main).marginBottom) || 0 : 0)) };
   const txt = document.body.innerText;
   if (txt.includes('{{')) out.text.push('{{');

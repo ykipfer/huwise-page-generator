@@ -1,0 +1,37 @@
+<div class="hw-page">
+  <ods-dataset-context context="datactx" datactx-dataset="dvs_awt_econ_20250203" datactx-parameters="{'disjunctive.jahr': true}">
+    <div class="hw-body hw-shape-single">
+      <div class="hw-top">
+        <div class="hw-kpis">
+          <div class="hw-kpi" ods-aggregation="kpi_value" ods-aggregation-context="datactx" ods-aggregation-function="SUM" ods-aggregation-expression="logiernachte">
+            <p class="hw-kpi-value">{{ kpi_value | number:0 }}</p>
+            <p class="hw-kpi-label">Logiernächte</p>
+          </div>
+          <div class="hw-kpi" ods-aggregation="kpi_value" ods-aggregation-context="datactx" ods-aggregation-function="SUM" ods-aggregation-expression="ankunfte">
+            <p class="hw-kpi-value">{{ kpi_value | number:0 }}</p>
+            <p class="hw-kpi-label">Ankünfte</p>
+          </div>
+        </div>
+        <div class="hw-filters">
+          <div class="hw-filter" ods-facet-results="jahre" ods-facet-results-context="datactx" ods-facet-results-facet-name="jahr" ods-facet-results-sort="-alphanum">
+            <p class="hw-filter-label">Jahr</p>
+            <ods-select options="jahre" label-modifier="name" value-modifier="name" selected-values="datactx.parameters['refine.jahr']" placeholder="Alle Jahre"></ods-select>
+          </div>
+        </div>
+      </div>
+      <div class="hw-card hw-card--table">
+        <div class="hw-table-area">
+          <div class="hw-table-scroll">
+            <div class="hw-table-wide">
+              <ods-table context="datactx" displayed-fields="gemeinde_name,datum,betriebe,zimmer,verfugbare_zimmer,ankunfte,logiernachte,zimmernachte,durchschnittliche_aufenthaltsdauer,bruttozimmerauslastung" sort="-datum"></ods-table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hw-footer">
+      <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+      <a href="https://data.gr.ch/explore/dataset/dvs_awt_econ_20250203/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+    </div>
+  </ods-dataset-context>
+</div>
