@@ -9,7 +9,10 @@ const here = import.meta.dirname;
 const CLI = path.join(here, '..', 'verify.mjs');
 
 // Copy a fixture into a temp dir so runs never write into the repo.
-function run(fixture, extraArgs = ['--target-height', '800', '--embed-size', 'gross']) {
+// Lint tests stay offline (--no-dry-run); dry-run tests pass DRY_RUN_ARGS and hit live data.gr.ch.
+const LINT_ARGS = ['--target-height', '800', '--embed-size', 'gross', '--no-dry-run'];
+const DRY_RUN_ARGS = ['--target-height', '800', '--embed-size', 'gross'];
+function run(fixture, extraArgs = LINT_ARGS) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-'));
   fs.cpSync(path.join(here, 'fixtures', fixture), dir, { recursive: true });
   const r = spawnSync('node', [CLI, dir, ...extraArgs], { encoding: 'utf8' });
@@ -163,6 +166,66 @@ test('allowed-documented-and-global-attributes: documented, global and AngularJS
   const r = run('allowed-documented-and-global-attributes');
   assert.equal(r.status, 0);
   assert.deepEqual(r.report.findings, []);
+});
+
+// Dry-run stage: runs against live data.gr.ch (anonymous budget 5000/day, about 1 request per dataset,
+// literal query or colour map) on a stable dataset, with no hard-coded years.
+const dryRunErrors = [
+  ['dryrun-missing-field', 'dry-run-missing-field', 2, 'gibt_es_nicht'],
+  ['dryrun-record-fields-missing', 'dry-run-missing-field', 2, 'gemeinde_nam'],
+  ['dryrun-empty-query', 'dry-run-empty-query', 2, 'betriebe < 0'],
+  ['dryrun-colour-map-extra-key', 'dry-run-colour-map-mismatch', 2, 'X'],
+];
+for (const [fixture, rule, line, mention] of dryRunErrors) {
+  test(`${fixture}: exactly one ${rule} error at index.html:${line} naming "${mention}", exit 1`, () => {
+    const r = run(fixture, DRY_RUN_ARGS);
+    assert.equal(r.status, 1);
+    assert.deepEqual(summary(r.report), [[rule, 'error', 'index.html', line]]);
+    assert.ok(r.report.findings[0].message.includes(mention), r.report.findings[0].message);
+  });
+}
+
+test('a colour map missing a real facet value lists the missing key', () => {
+  const r = run('dryrun-colour-map-extra-key', DRY_RUN_ARGS);
+  assert.match(r.report.findings[0].message, /missing[^.]*\bP\b/i);
+});
+
+test('a colour map that exactly matches the facet values passes and the report counts 2 API requests', () => {
+  const r = run('dryrun-colour-map-matches', DRY_RUN_ARGS);
+  assert.equal(r.status, 0);
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.report.stages.dryRun.status, 'pass');
+  assert.equal(r.report.apiRequests, 2);
+  assert.match(fs.readFileSync(path.join(r.dir, 'verifier-output', 'report.md'), 'utf8'), /API requests: 2/);
+});
+
+test('existing fields in parameters, filters and row expressions pass; one literal query costs one request', () => {
+  const r = run('dryrun-valid-fields-and-query', DRY_RUN_ARGS);
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+  assert.equal(r.report.apiRequests, 2);
+});
+
+test('the dry-run is skipped, and reported as skipped, when lint has errors', () => {
+  const r = run('dryrun-lint-error-skips', DRY_RUN_ARGS);
+  assert.equal(r.status, 1);
+  assert.deepEqual(summary(r.report), [['refused-script', 'error', 'index.html', 1]]);
+  assert.equal(r.report.stages.lint.status, 'fail');
+  assert.equal(r.report.stages.dryRun.status, 'skipped');
+  assert.equal(r.report.apiRequests, 0);
+  assert.match(fs.readFileSync(path.join(r.dir, 'verifier-output', 'report.md'), 'utf8'), /Dry-run: skipped/);
+});
+
+test('render is skipped when the dry-run has errors', () => {
+  const r = run('dryrun-missing-field', DRY_RUN_ARGS);
+  assert.equal(r.report.stages.dryRun.status, 'fail');
+  assert.equal(r.report.stages.render.status, 'skipped');
+});
+
+test('a Page without datasets passes the dry-run with 0 API requests', () => {
+  const r = run('clean', DRY_RUN_ARGS);
+  assert.equal(r.report.stages.dryRun.status, 'pass');
+  assert.equal(r.report.apiRequests, 0);
 });
 
 // The core reference explains what the lint enforces: every listed Widget and banned habit appears in it.
