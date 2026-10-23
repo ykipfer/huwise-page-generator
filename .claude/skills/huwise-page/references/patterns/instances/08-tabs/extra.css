@@ -1,26 +1,2 @@
-/* Pattern 8: the CI look for the tab bar that ods-simple-tabs generates. It sits inside the card, so every
-   rule is scoped under .hw-page; the heights are the ones .hw-has-tabs reserves (--hw-tabs-h plus 8px). */
-.hw-page .ods-simple-tabs-container { margin: 0; }
-.hw-page .ods-simple-tabs-nav {
-  height: var(--hw-tabs-h);
-  margin: 0 0 8px;
-  border-bottom: 1px solid var(--hw-rule);
-  overflow-y: hidden;
-}
-.hw-page .ods-simple-tabs-nav-link {
-  height: 100%;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  font-weight: 700;
-  color: var(--hw-muted);
-}
-.hw-page .ods-simple-tabs-nav-link:hover,
-.hw-page .ods-simple-tabs-nav-link:focus { border-bottom-color: var(--hw-rule); }
-.hw-page .ods-simple-tabs-nav-link.ods-simple-tabs-nav-link-active { color: var(--hw-brand); border-bottom-color: var(--hw-brand); }
-
-/* Pattern 6 (the charts in the tabs): hide the timezone caption. */
-.hw-page .chart-timezone-caption { display: none; }
-
 /* ods-text-search carries its own margin; the filter box has a fixed height. */
 .hw-page .hw-filter .odswidget-text-search { margin: 0; }

@@ -8,7 +8,7 @@ Let the reader switch between several Visualizations of the same data in the one
 
 - `ods-simple-tabs` > `ods-simple-tab` (`widgets/tabs.md`).
 - The root element gets `hw-has-tabs`, which reserves the height of the tab bar (`--hw-tabs-h` plus 8px) in the budget. The areas inside the tabs (`hw-chart-area`, `hw-table-area`) then shrink by exactly that.
-- The tab bar is the one the Widget generates (`ul.ods-simple-tabs-nav`). Its CI look comes from the Page CSS block below, which uses the base stylesheet's tokens. The base stylesheet's `hw-tabs` and `hw-tab` classes are the Widget-free stand-in for the Page Sketch only: a built Page styles the Widget's own nav and does not use them.
+- The tab bar is the one the Widget generates (`ul.ods-simple-tabs-nav`). Its CI look comes from the base stylesheet (`.ods-simple-tabs-nav` and `.ods-simple-tabs-nav-link`), which uses the base tokens; the Page adds no CSS for it. The base stylesheet's `hw-tabs` and `hw-tab` classes are the Widget-free stand-in for the Page Sketch only: a built Page styles the Widget's own nav and does not use them.
 
 ## Snippet
 
@@ -36,30 +36,7 @@ Let the reader switch between several Visualizations of the same data in the one
 </div>
 ```
 
-and in the Page's CSS, after the base stylesheet:
-
-```css
-.hw-page .ods-simple-tabs-container { margin: 0; }
-.hw-page .ods-simple-tabs-nav {
-  height: var(--hw-tabs-h);
-  margin: 0 0 8px;
-  border-bottom: 1px solid var(--hw-rule);
-  overflow-y: hidden;
-}
-.hw-page .ods-simple-tabs-nav-link {
-  height: 100%;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  font-weight: 700;
-  color: var(--hw-muted);
-}
-.hw-page .ods-simple-tabs-nav-link:hover,
-.hw-page .ods-simple-tabs-nav-link:focus { border-bottom-color: var(--hw-rule); }
-.hw-page .ods-simple-tabs-nav-link.ods-simple-tabs-nav-link-active { color: var(--hw-brand); border-bottom-color: var(--hw-brand); }
-```
-
-Placeholders: `{tab_label_one}`, `{tab_label_two}` are short German labels (one or two words). Two to four tabs fit at 375px. The tabs must fit the Page width: the nav is not an allowed scroll container (`scroll-containers.json`), so a nav wider than the Page is reported as `overflow` at 375px.
+Placeholders: `{tab_label_one}`, `{tab_label_two}` are short German labels (one or two words). Two to four tabs fit at 375px. The tabs must fit the Page width: the nav is an allowed scroll container (`scroll-containers.json`), so a wide nav scrolls sideways instead of being reported as `overflow`, but a reader may not notice the hidden tabs: keep the labels short.
 
 The tabs card has no `hw-card-title`: the first tab's label is the title. If the card carries a title, the budget already reserves it (`--hw-card-head-h`).
 
@@ -70,7 +47,7 @@ The tabs card has no `hw-card-title`: the first tab's label is the title. If the
 - A variable assigned inside one tab is not visible in another (child scope per tab, core.md "The scope rule").
 - Do not read `simpleTabActive` to build your own tabs, and do not add an `ng-click` that switches a tab. Use the Widget (`banned-hand-built-tabs`).
 - Two tab sets in one scope share `simpleTabActive` unless each has its own `sync-to-scope`. Pages use one tab set.
-- The Widget's default tab bar has platform margins (`margin-bottom: 20px` on the nav, `1.5rem` on the container, `simple-tabs.less`) and padding that differ from what `hw-has-tabs` reserves. Always include the CSS block, or the budget no longer matches.
+- The Widget's default tab bar has platform margins (`margin-bottom: 20px` on the nav, `1.5rem` on the container, `simple-tabs.less`) and padding that differ from what `hw-has-tabs` reserves. The base stylesheet overrides them to match the budget; do not override them again.
 - One Visualization per tab. A tab with a chart and a table below it does not fit the area; split it into two tabs.
 - Filters above the tabs must apply to all of them: every Visualization reads the same context. A filter that changes only one tab belongs in that tab, as a second context (and costs the budget a filter row there, which the base stylesheet does not provide: do not do it).
 - Tabs are for the wide layouts and phones alike: below 720px the tab bar stays. Keep labels short so the bar fits without sideways scroll.

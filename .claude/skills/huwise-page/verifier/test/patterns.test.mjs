@@ -30,7 +30,7 @@ const INSTANCES = {
   'p03a-latest-period-facet': { pattern: 3, has: ['ods-facet-results-sort="-num"', 'ng-if="jahre.length"', "'refine.jahr': ''+jahre[0].name"] },
   'p03b-latest-period-max': { pattern: 3, has: ['max(datum) as datum', "datactx.parameters['refine.jahr'].length ?", "moment:'YYYY'", 'ng-if="latest.length"'] },
   'p04-copy-filter': { pattern: 4, has: ["geoctx.parameters['refine.name'] = datactx.parameters['refine.region']"] },
-  'p14-empty-state': { pattern: 14, has: ['!treffer || treffer.length === 0', 'Keine Daten für diese Auswahl', 'hw-empty'] },
+  'p14-empty-state': { pattern: 14, has: ['!treffer || treffer.length === 0', 'Keine Daten für diese Auswahl', 'hw-empty'], warnings: ['widget-variable-guarded'] },
 };
 
 // ---------- the Pattern files ----------
@@ -73,7 +73,7 @@ test('core.md lists the filter Patterns', () => {
 });
 
 // ---------- the instances ----------
-for (const [name, { has }] of Object.entries(INSTANCES)) {
+for (const [name, { has, warnings = [] }] of Object.entries(INSTANCES)) {
   const dir = path.join(PATTERNS, 'instances', name);
 
   test(`${name}: base stylesheet verbatim, markup as the Pattern shows, no year literal`, () => {
@@ -86,14 +86,16 @@ for (const [name, { has }] of Object.entries(INSTANCES)) {
     assert.ok(html.includes('class="hw-footer"'));
   });
 
-  test(`${name}: the verifier passes it with no findings at 375, 720 and 1200px`, () => {
+  test(`${name}: the verifier passes it with no errors (only its expected warnings) at 375, 720 and 1200px`, () => {
     const copy = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-pattern-'));
     for (const f of ['index.html', 'stylesheet.css']) fs.copyFileSync(path.join(dir, f), path.join(copy, f));
     const r = spawnSync('node', [CLI, copy, '--target-height', '800', '--embed-size', 'gross'],
       { encoding: 'utf8', env: { ...process.env, VERIFIER_CACHE_DIR: cacheDir } });
     const report = JSON.parse(fs.readFileSync(path.join(copy, 'verifier-output', 'report.json'), 'utf8'));
     assert.equal(r.status, 0, r.stdout + r.stderr + JSON.stringify(report.findings));
-    assert.deepEqual(report.findings, []);
+    // the only findings allowed are the Instance's expected warnings (Pattern 14: the guarded probe variable)
+    assert.deepEqual([...new Set(report.findings.map(f => f.rule))], warnings);
+    assert.ok(report.findings.every(f => f.severity === 'warning'));
     assert.deepEqual(report.stages.render.screenshots.map(s => s.width), [375, 720, 1200]);
     assert.equal(report.stages.dryRun.status, 'pass');
   });

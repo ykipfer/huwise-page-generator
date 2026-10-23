@@ -116,7 +116,7 @@ Pages mix two query dialects:
 - **Read the active filter value**, which may be a string or an array: `([].concat(datactx.parameters['refine.jahr']))[0]`.
 - **Cast keys and refine values to strings with `''+`:** `'refine.jahr': ''+jahre[0].name`, and `'refine.bfs_nummer': ''+record.fields.gemeindenummer` in a tooltip context. Integer and text keys (`gemeindenummer` vs `bfs_nummer`) only match as strings.
 - **Record fields:** `row.fields.name` for `ods-results` rows and `record.fields.name` in map-layer tooltips. `ods-adv-analysis` rows are flat: `rows[0].total`.
-- **Guard rendering:** use `ng-if="rows.length"` before reading `rows[0]`, and show an empty state with `ng-if="!rows || rows.length === 0"` (Pattern 14). The render stage accepts a Widget variable that is empty when the Page tests it that way (`!x`, `!x.length`, `x.length === 0` in `ng-if`, `ng-show` or `ng-hide`); a guard on the non-empty case alone is not enough.
+- **Guard rendering:** use `ng-if="rows.length"` before reading `rows[0]`, and show an empty state with `ng-if="!rows || rows.length === 0"` (Pattern 14). The render stage accepts a Widget variable that is empty when the Page tests it that way (`!x`, `!x.length`, `x.length === 0` in `ng-if`, `ng-show` or `ng-hide`); a guard on the non-empty case alone is not enough. The excused empty variable is not silent: the render stage reports the **warning** `widget-variable-guarded` (one per excused variable, naming it), so the Page's author sees that the empty state was reached. A guarded variable that is `NaN` is still an error `widget-variable`.
 - **Format numbers and dates:** `{{ total | number:0 }}` (de-ch thousands separator with `flg=de-ch`) and `{{ latest[0].datum | moment:'MMM YYYY' }}`.
 - AngularJS core directives (`ng-if`, `ng-show`, `ng-repeat`, `ng-class`, `ng-init` for constant lists) are allowed. Platform filters are not: `currentLanguage` is banned.
 
@@ -173,7 +173,7 @@ Exact value-to-colour maps:
 - **Maps:** `color-categories` + `color-by-field` on `ods-map-layer display="categories"`, plus `color-categories-other` for shapes without data (`map.js:1445-1452`). A choropleth feeds them from `ods-color-gradient`: `color-categories="colors['colors']"`, with `ods-color-gradient-low="#E7E7F2"` and `ods-color-gradient-high="#2D2D8A"`. Choose the exponent per dataset.
 - Keys must be **exactly** the field's real values; a missing key silently falls back to the default palette. The dry-run stage checks this.
 
-CI order for categories: `#2D2D8A, #E69F00, #009E73, #56B4E9, #CC79A7, #0072B2, #D55E00`. Use `#6B6B6B` for "Übrige/Andere", and group more than 7 categories into "Übrige". Red is never a category colour. Status colours are for real ratings only.
+CI order for categories: `#2D2D8A, #E69F00, #009E73, #56B4E9, #CC79A7, #0072B2, #D55E00`. Use `#6B6B6B` for "Übrige/Andere" where a Visualization can draw such a value (a map's `color-categories-other`). A **stacked chart** with more than 7 categories shows the 7 largest only and the rest goes into a KPI (Pattern 6); it has no "Übrige" series. Red is never a category colour. Status colours are for real ratings only.
 
 ## Highcharts 6.1.4
 

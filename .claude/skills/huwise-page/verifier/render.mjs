@@ -183,7 +183,11 @@ const inspectFrame = ({ allowed, chartIds, mapIds, repeats, guarded }) => {
       try { v = scope.$eval(name); } catch { v = undefined; }
       const where = `ods-${kind}="${attr.value}"`;
       // a variable the Page tests for emptiness (an empty-state guard, Pattern 14) is expected to be empty sometimes
-      if (guarded.includes(name) && (v === undefined || v === null || (Array.isArray(v) && v.length === 0))) continue;
+      // It is reported as a warning, never silently accepted: an empty probe can also mean a broken filter.
+      if (guarded.includes(name) && (v === undefined || v === null || (Array.isArray(v) && v.length === 0))) {
+        out.signals.push({ rule: 'widget-variable-guarded', warning: true, message: `Widget variable "${name}" (${where}) is empty, excused by an emptiness guard` });
+        continue;
+      }
       if (v === undefined || v === null) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is unset` });
       else if (Array.isArray(v) && v.length === 0) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is empty` });
       else if (typeof v === 'number' && Number.isNaN(v)) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is NaN` });
@@ -402,7 +406,8 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
   // one finding per distinct problem and state, listing the widths where it occurs
   const byKey = new Map();
   for (const { w, state, issue: i } of perWidth) {
-    const k = `${i.rule}\0${i.message}\0${state}`;
+    // one warning per excused variable, not one per state that shows it empty
+    const k = i.rule === 'widget-variable-guarded' ? `${i.rule}\0${i.message}` : `${i.rule}\0${i.message}\0${state}`;
     if (!byKey.has(k)) byKey.set(k, { rule: i.rule, severity: i.rule === 'not-settled' || i.warning ? 'warning' : 'error', message: i.message, location: { widths: [], state: state ?? 'all states' }, details: [] });
     const f = byKey.get(k);
     for (const x of [].concat(w)) if (!f.location.widths.includes(x)) f.location.widths.push(x);

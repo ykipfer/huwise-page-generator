@@ -114,7 +114,17 @@ test('an empty Widget variable fails with exactly that finding', () => {
 test('an empty variable that the Page guards with an empty-state message passes', () => {
   const r = run('render-empty-variable-guarded', ['--iterate']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.deepEqual(r.report.findings, []);
+  // excused, but not silently: one warning that names the variable
+  assert.deepEqual(summary(r.report), [['widget-variable-guarded', 'warning']]);
+  assert.match(r.report.findings[0].message, /"rows"/);
+});
+
+test('every guarded empty variable gets its own warning, naming it, and none is an error', () => {
+  const r = run('render-empty-variables-guarded-two', ['--iterate']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['widget-variable-guarded', 'warning'], ['widget-variable-guarded', 'warning']]);
+  const names = r.report.findings.map(f => f.message.match(/"(\w+)"/)[1]).sort();
+  assert.deepEqual(names, ['more', 'rows']);
 });
 
 test('a guard that only handles the non-empty case does not excuse an empty variable', () => {

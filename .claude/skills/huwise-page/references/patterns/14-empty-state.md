@@ -10,7 +10,7 @@ Show "Keine Daten für diese Auswahl" in place of a Visualization when the reade
 - Core directives `ng-if` (`core.md`, "Guard rendering"). No other Widget.
 - Any Widget that would show nothing useful on no rows (an `ods-aggregation` KPI, an `ods-chart`) sits inside the positive `ng-if`.
 
-The empty-state message needs its own CSS rule (below). The base stylesheet has no empty-state class, and the Page's own rules go after the base stylesheet.
+The empty-state message uses the base stylesheet's `.hw-empty` class (centred, dashed border, muted colour); the Page adds no CSS for it.
 
 ## Snippet
 
@@ -40,22 +40,6 @@ The empty-state message needs its own CSS rule (below). The base stylesheet has 
 </div>
 ```
 
-The CSS, after the base stylesheet:
-
-```css
-.hw-page .hw-empty {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  text-align: center;
-  border: 1px dashed var(--hw-rule);
-  border-radius: 4px;
-  color: var(--hw-muted);
-}
-```
-
 Placeholders:
 
 - `{probe_variable}`: the variable of the probe (`treffer`). Pick a name of your own; never the default `results`.
@@ -68,7 +52,7 @@ Placeholders:
 
 - **Put every Widget that reads or shows the data inside the positive `ng-if`.** A KPI aggregation or a chart over no rows has nothing to show, and the verifier reports it (`widget-variable`, `chart-no-points`). Inside the positive `ng-if` they do not exist in the empty state.
 - **Keep the empty branch in the same area** (`hw-chart-area`, `hw-table-area`, `hw-map-area`). The fixed height of the layout must not change between the two states, or the Page overflows its Target Height in the empty state.
-- **The guard is the form `!x || x.length === 0`**. The verifier recognises a guard written in `ng-if`, `ng-show` or `ng-hide` as `!x`, `!x.length` or `x.length === 0` and then accepts that `x` is empty in some states. A guard that only handles the non-empty case (`ng-if="x.length"` alone) is **not** a guard: the empty variable is still reported as `widget-variable`, because it means the Page has no empty state.
+- **The guard is the form `!x || x.length === 0`**. The verifier recognises a guard written in `ng-if`, `ng-show` or `ng-hide` as `!x`, `!x.length` or `x.length === 0` and then accepts that `x` is empty in some states, with the **warning** `widget-variable-guarded` (one per excused variable, naming it; exit status stays 0). The warning is expected on a Page with an empty-state guard: it only says the empty state was reached. `NaN` is never excused. A guard that only handles the non-empty case (`ng-if="x.length"` alone) is **not** a guard: the empty variable is still reported as `widget-variable`, because it means the Page has no empty state.
 - **`x` must be the probe's own variable**, the one named in `ods-results="x"`. A guard on a different name does not excuse it.
 - **The probe's scope:** `ods-results` creates a child scope (`results.js:64`), so the guards must sit inside its element. Guards placed outside see `x` as undefined, so the empty message would show all the time.
 - **The empty state must be reachable** by the verifier's state exploration (tab, ng-click or option states); an empty message that only appears after typing is never seen. The instance reaches it through the second dropdown's options (Dezember with the year 2026, whose data stops in August).
@@ -81,4 +65,4 @@ Referenztarife für ausserkantonale, stationäre Spitalleistungen (`page_example
 
 ## Proven instance
 
-`patterns/instances/p14-empty-state/`: dataset `dvs_awt_econ_20250203` (Beherbergungsstatistik), Jahr and Monat dropdowns whose options come from an unfiltered context `optctx`, so "2026 / Dezember" is selectable and empty. The verifier explores that state (state "Dezember" after "2026", with the Page showing "Keine Daten für diese Auswahl") and reports no findings, at 375, 720 and 1200px (Gross).
+`patterns/instances/p14-empty-state/`: dataset `dvs_awt_econ_20250203` (Beherbergungsstatistik), Jahr and Monat dropdowns whose options come from an unfiltered context `optctx`, so "2026 / Dezember" is selectable and empty. The verifier explores that state (state "Dezember" after "2026", with the Page showing "Keine Daten für diese Auswahl") and reports no errors, at 375, 720 and 1200px (Gross). Its one finding is the expected warning `widget-variable-guarded` for `treffer`.

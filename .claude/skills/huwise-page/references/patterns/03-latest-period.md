@@ -97,7 +97,7 @@ Beherbergungsstatistik der Gemeinden (`page_examples/Beherbergungsstatistik der 
 
 ## Proven instances
 
-Both on dataset `dvs_awt_econ_20250203` (Beherbergungsstatistik der Gemeinden, `jahr` and `datum`), each with a KPI and a column chart of the Logiernächte per Monat. Both verifier clean (no findings) at 375, 720 and 1200px (Gross) and in every explored option state; neither contains a year literal. Checked in a real browser: the default shows the latest year, picking another year works, and clicking the picked year again (clearing) returns to the latest year.
+Both on dataset `dvs_awt_econ_20250203` (Beherbergungsstatistik der Gemeinden, `jahr` and `datum`), each with a KPI and a column chart of the Logiernächte per Monat. Both verifier clean (no findings; neither tests a variable for emptiness, so no `widget-variable-guarded` warning) at 375, 720 and 1200px (Gross) and in every explored option state; neither contains a year literal. Checked in a real browser: the default shows the latest year, picking another year works, and clicking the picked year again (clearing) returns to the latest year.
 
 - Variant A: `patterns/instances/p03a-latest-period-facet/`.
 - Variant B: `patterns/instances/p03b-latest-period-max/`.

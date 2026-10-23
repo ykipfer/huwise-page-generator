@@ -21,7 +21,7 @@ Which colours go where, the part the lint cannot see:
 
 - Categories take the colours in this order: `#2D2D8A, #E69F00, #009E73, #56B4E9, #CC79A7, #0072B2, #D55E00`.
 - "Übrige" and "Andere" are always `#6B6B6B`.
-- More than 7 categories: keep the 7 largest and group the rest into "Übrige". Never extend the order with other colours.
+- More than 7 categories in a stacked chart: show the 7 largest and put the rest in a KPI (Pattern 6); the chart has no "Übrige" series. Never extend the order with other colours. Elsewhere (a map's `color-categories-other`) "Übrige" stays `#6B6B6B`.
 - Red is never a category colour.
 - Sequential maps run from `#E7E7F2` (low) to `#2D2D8A` (high): `ods-color-gradient-low` and `-high`.
 - A single series uses `#2D2D8A`.

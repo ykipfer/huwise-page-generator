@@ -26,12 +26,6 @@ Show how a value develops or compares: a column, bar or line chart over time or 
 </div>
 ```
 
-and in the Page's CSS, after the base stylesheet:
-
-```css
-.hw-page .chart-timezone-caption { display: none; }
-```
-
 Placeholders:
 
 - `{main_context}`: `datactx` by default. The context's parameters may carry a literal filter (below).
@@ -43,13 +37,13 @@ Placeholders:
 
 `chart-type` is `column`, `bar` or `line` (`stacked` works with all three). Horizontal `bar` needs the categories on x.
 
-### More than 7 categories
+### More than 7 categories (stacked charts)
 
-The colour order has 7 entries, and "Übrige"/"Andere" is `#6B6B6B`. The Widgets cannot merge categories: there is no "top N plus the rest" option. What works, verified through the dry-run and the render stage:
+The colour order has 7 entries. **Rule: a stacked chart shows the 7 largest categories, and the rest goes into a KPI.** There is no "Übrige" series in a stacked chart: the Widgets cannot merge categories (no "top N plus the rest" option), and a second `ods-chart-query` that draws "Übrige" as one grey series does not stack on top of the first (ods-widgets 2.1.2 gives a query without `series-breakdown` no stacking in the observed render, `series.options.stacking` is `null`), so the grey bar would stand beside the stack. What works, verified through the dry-run and the render stage:
 
 - Restrict the chart's context to the 7 largest values with literal parameters, so the map keys and the data match: `datactx-parameters="{'disjunctive.{breakdown_field}': true, 'refine.{breakdown_field}': ['{value_one}', … seven values]}"`. The dry-run checks `category-colors` against the values this filter leaves.
 - Say in the plan list that the remaining categories are not charted, and show their total in a KPI (Pattern 5) on a second context with the matching `exclude.{breakdown_field}` list.
-- A second `ods-chart-query` that draws "Übrige" as one grey series does **not** stack on top of the first query: ods-widgets 2.1.2 gives a query without `series-breakdown` no stacking in the observed render (`series.options.stacking` is `null`), so the grey bar stands beside the stack. Do not use it for a stacked chart. Report the gap instead of improvising.
+- Do not draw "Übrige" as a series. Flag this to the reader of the plan: it applies to stacked charts only (`#6B6B6B` for "Übrige" stays valid where a Visualization can draw it, such as a map's `color-categories-other`).
 
 ## Pitfalls
 
@@ -60,7 +54,7 @@ The colour order has 7 entries, and "Übrige"/"Andere" is `#6B6B6B`. The Widgets
 - `range-custom` and ColorBrewer names are not CI colours. For a single colour use a hex; for series use `category-colors`.
 - Highcharts here is **6.1.4**, not 11 (`core.md`). Do not rely on newer Highcharts options.
 - `single-y-axis="false"` still turns the single axis on (`core.md`, chart notes). Leave the attribute off.
-- The platform appends a timezone caption ("Alle Daten und Zeiten sind im Zeitformat Europe/Zurich angegeben") inside the chart, below the plot, in the platform's language mix. It is not part of the fixed-height area, so at phone width it runs into the footer. Hide it with the CSS rule above.
+- The platform appends a timezone caption ("Alle Daten und Zeiten sind im Zeitformat Europe/Zurich angegeben") inside the chart, below the plot, in the platform's language mix. It is not part of the fixed-height area, so at phone width it runs into the footer. The base stylesheet hides it (`.chart-timezone-caption`); the Page adds no CSS for it.
 - A monthly dataset aggregated per year with `SUM` double counts stocks (people registered): use `AVG`. The latest year is incomplete: say so in the label only if it matters, never cut it off by hand.
 - Long legends wrap and take height from the plot. Keep breakdown values to the 7 above and the card title to one line at 375px.
 - Never set a height on the chart or its parents yourself, and never use `vh`.

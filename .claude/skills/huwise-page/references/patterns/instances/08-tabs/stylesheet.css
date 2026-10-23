@@ -235,6 +235,28 @@
 }
 .hw-page .hw-tab.is-active { color: var(--hw-brand); border-bottom-color: var(--hw-brand); }
 
+/* The tab bar that the ods-simple-tabs Widget generates (Pattern 8). It sits inside the card; the heights are the ones
+   .hw-has-tabs reserves (--hw-tabs-h plus 8px). The nav scrolls sideways when the tabs do not fit (a scroll container). */
+.hw-page .ods-simple-tabs-container { margin: 0; }
+.hw-page .ods-simple-tabs-nav {
+  height: var(--hw-tabs-h);
+  margin: 0 0 8px;
+  border-bottom: 1px solid var(--hw-rule);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.hw-page .ods-simple-tabs-nav-link {
+  height: 100%;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: var(--hw-muted);
+}
+.hw-page .ods-simple-tabs-nav-link:hover,
+.hw-page .ods-simple-tabs-nav-link:focus { border-bottom-color: var(--hw-rule); }
+.hw-page .ods-simple-tabs-nav-link.ods-simple-tabs-nav-link-active { color: var(--hw-brand); border-bottom-color: var(--hw-brand); }
+
 /* ---------- areas: fixed heights derived from the budget, with minimums ---------- */
 .hw-page .hw-map-area { height: max(280px, var(--hw-area-h)); position: relative; }
 .hw-page .hw-chart-area { height: max(240px, var(--hw-area-h)); position: relative; }
@@ -244,6 +266,10 @@
 .hw-page .odswidget-map,
 .hw-page .odswidget-map__map { height: 100%; min-height: 0; }
 .hw-page .ods-chart { height: 100%; min-height: 0; }
+
+/* The platform appends a timezone caption below every time-based chart (Pattern 6). It sits outside the fixed-height
+   area, so it pushes into the footer at phone width. */
+.hw-page .chart-timezone-caption { display: none; }
 
 /* A context element may wrap the whole Page body (the footer reads its dataset): it must not become a layout box. */
 .hw-page ods-dataset-context { display: contents; }
@@ -260,6 +286,19 @@
   border-radius: 4px;
   background: var(--hw-tint);
   color: var(--hw-ink-soft);
+}
+
+/* Empty-state message (Pattern 14), centred in the area the Visualization would fill */
+.hw-page .hw-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  border: 1px dashed var(--hw-rule);
+  border-radius: 4px;
+  color: var(--hw-muted);
 }
 
 /* table card: 4px radius, brand-blue header row, alternating off-white rows. The table scrolls vertically
@@ -353,30 +392,6 @@
 }
 
 .hw-page { --target-height: 800px; }
-
-/* Pattern 8: the CI look for the tab bar that ods-simple-tabs generates. It sits inside the card, so every
-   rule is scoped under .hw-page; the heights are the ones .hw-has-tabs reserves (--hw-tabs-h plus 8px). */
-.hw-page .ods-simple-tabs-container { margin: 0; }
-.hw-page .ods-simple-tabs-nav {
-  height: var(--hw-tabs-h);
-  margin: 0 0 8px;
-  border-bottom: 1px solid var(--hw-rule);
-  overflow-y: hidden;
-}
-.hw-page .ods-simple-tabs-nav-link {
-  height: 100%;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  font-weight: 700;
-  color: var(--hw-muted);
-}
-.hw-page .ods-simple-tabs-nav-link:hover,
-.hw-page .ods-simple-tabs-nav-link:focus { border-bottom-color: var(--hw-rule); }
-.hw-page .ods-simple-tabs-nav-link.ods-simple-tabs-nav-link-active { color: var(--hw-brand); border-bottom-color: var(--hw-brand); }
-
-/* Pattern 6 (the charts in the tabs): hide the timezone caption. */
-.hw-page .chart-timezone-caption { display: none; }
 
 /* ods-text-search carries its own margin; the filter box has a fixed height. */
 .hw-page .hw-filter .odswidget-text-search { margin: 0; }
