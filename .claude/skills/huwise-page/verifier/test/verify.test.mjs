@@ -9,9 +9,9 @@ const here = import.meta.dirname;
 const CLI = path.join(here, '..', 'verify.mjs');
 
 // Copy a fixture into a temp dir so runs never write into the repo.
-// Lint tests stay offline (--no-dry-run); dry-run tests pass DRY_RUN_ARGS and hit live data.gr.ch.
-const LINT_ARGS = ['--target-height', '800', '--embed-size', 'gross', '--no-dry-run'];
-const DRY_RUN_ARGS = ['--target-height', '800', '--embed-size', 'gross'];
+// Lint tests stay offline (--no-dry-run, --skip-render; the render stage has its own tests in render.test.mjs); dry-run tests pass DRY_RUN_ARGS and hit live data.gr.ch.
+const LINT_ARGS = ['--target-height', '800', '--embed-size', 'gross', '--no-dry-run', '--skip-render'];
+const DRY_RUN_ARGS = ['--target-height', '800', '--embed-size', 'gross', '--skip-render'];
 function run(fixture, extraArgs = LINT_ARGS) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-'));
   fs.cpSync(path.join(here, 'fixtures', fixture), dir, { recursive: true });

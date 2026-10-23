@@ -6,3 +6,5 @@ verifier-output/
 # verifier dependencies and agent worktrees
 node_modules/
 .claude/worktrees/
+# scraped platform config cache of the render stage
+.claude/skills/huwise-page/verifier/.cache/

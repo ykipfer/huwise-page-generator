@@ -1,24 +1,28 @@
 // Verifier CLI for the huwise-page skill.
-// Usage: node verify.mjs <page-dir> --target-height <px> --embed-size <klein|gross> [--no-dry-run]
-// (--no-dry-run skips the network-bound dry-run stage; the lint tests use it to stay offline)
+// Usage: node verify.mjs <page-dir> --target-height <px> --embed-size <klein|gross> [--no-dry-run] [--iterate] [--skip-render]
+// --no-dry-run skips the network-bound dry-run stage; --skip-render skips the render stage (the lint tests use both to stay offline).
+// --iterate renders at 1200px only, for use while iterating.
 // Reads <page-dir>/index.html and stylesheet.css, writes verifier-output/report.{json,md}
 // into the Page folder, exits 1 on any error finding (2 on bad usage).
 import fs from 'node:fs';
 import path from 'node:path';
 import { lint } from './lint.mjs';
 import { dryRun } from './dryrun.mjs';
+import { render, WIDTHS, ITERATE_WIDTHS } from './render.mjs';
 
 const EMBED_SIZES = { klein: 'Klein', gross: 'Gross' };
 
 function usage(msg) {
-  console.error(`${msg}\nUsage: node verify.mjs <page-dir> --target-height <px> --embed-size <klein|gross>`);
+  console.error(`${msg}\nUsage: node verify.mjs <page-dir> --target-height <px> --embed-size <klein|gross> [--no-dry-run] [--iterate] [--skip-render]`);
   process.exit(2);
 }
 
 function parseArgs(argv) {
-  const opts = { dir: null, targetHeight: null, embedSize: null, noDryRun: false };
+  const opts = { dir: null, targetHeight: null, embedSize: null, noDryRun: false, iterate: false, skipRender: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--no-dry-run') opts.noDryRun = true;
+    else if (argv[i] === '--iterate') opts.iterate = true;
+    else if (argv[i] === '--skip-render') opts.skipRender = true;
     else if (argv[i] === '--target-height') opts.targetHeight = Number(argv[++i]);
     else if (argv[i] === '--embed-size') opts.embedSize = EMBED_SIZES[String(argv[++i]).toLowerCase()];
     else if (!opts.dir) opts.dir = argv[i];
@@ -48,9 +52,12 @@ function markdown(report) {
   if (!report.findings.length) lines.push('No findings.');
   else {
     lines.push('| Severity | Rule | Location | Message |', '|---|---|---|---|');
-    for (const f of report.findings)
-      lines.push(`| ${f.severity} | ${f.rule} | ${f.location.file}:${f.location.line}:${f.location.column} | ${f.message} |`);
+    for (const f of report.findings) {
+      const where = f.location.widths ? `render at ${f.location.widths.join('/')}px` : `${f.location.file}:${f.location.line}:${f.location.column}`;
+      lines.push(`| ${f.severity} | ${f.rule} | ${where} | ${f.message.replace(/\|/g, '\\|')} |`);
+    }
   }
+  for (const s of report.stages.render.screenshots ?? []) lines.push(`- Screenshot at ${s.width}px: ${s.file}`);
   return lines.join('\n') + '\n';
 }
 
@@ -81,9 +88,22 @@ if (hasErrors(findings)) {
   apiRequests = dry.apiRequests;
   stages.dryRun = { status: stageStatus(dry.findings), apiRequests };
 }
-stages.render = stages.dryRun.status === 'pass'
-  ? { status: 'skipped', reason: 'render stage not built yet' }
-  : { status: 'skipped', reason: stages.lint.status === 'fail' ? 'lint has errors' : 'dry-run has errors' };
+const outDir = path.join(pageDir, 'verifier-output');
+fs.rmSync(outDir, { recursive: true, force: true });
+fs.mkdirSync(outDir, { recursive: true });
+
+// Render runs when every earlier stage present is clean (a stage that was switched off is not present).
+if (stages.lint.status === 'fail' || stages.dryRun.status === 'fail') {
+  stages.render = { status: 'skipped', reason: stages.lint.status === 'fail' ? 'lint has errors' : 'dry-run has errors', screenshots: [] };
+} else if (opts.skipRender) {
+  stages.render = { status: 'skipped', reason: 'disabled by --skip-render', screenshots: [] };
+} else {
+  const scrollSelectors = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'references', 'scroll-containers.json'), 'utf8')).selectors;
+  const widths = opts.iterate ? ITERATE_WIDTHS : WIDTHS[opts.embedSize];
+  const r = await render({ html, css, targetHeight: opts.targetHeight, widths, outDir, scrollSelectors });
+  findings.push(...r.findings);
+  stages.render = { status: stageStatus(r.findings), screenshots: r.screenshots, platformConfig: r.platformConfig };
+}
 
 const errors = findings.filter(f => f.severity === 'error');
 const report = {
@@ -96,9 +116,6 @@ const report = {
   findings,
 };
 
-const outDir = path.join(pageDir, 'verifier-output');
-fs.rmSync(outDir, { recursive: true, force: true });
-fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'report.json'), JSON.stringify(report, null, 2) + '\n');
 fs.writeFileSync(path.join(outDir, 'report.md'), markdown(report));
 console.log(`${report.status.toUpperCase()}: ${errors.length} error(s), ${findings.length - errors.length} other. Report: ${path.join(outDir, 'report.md')}`);
