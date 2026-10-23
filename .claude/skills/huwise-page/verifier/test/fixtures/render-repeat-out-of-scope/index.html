@@ -1,0 +1,6 @@
+<div class="page">
+  <ods-dataset-context context="datactx" datactx-dataset="dvs_awt_econ_20250203">
+    <div ods-results="rows" ods-results-context="datactx" ods-results-max="3"><p>Geladen: {{ rows.length }}</p></div>
+  </ods-dataset-context>
+  <ul><li ng-repeat="r in rows">{{ r.fields.jahr }}</li></ul>
+</div>
