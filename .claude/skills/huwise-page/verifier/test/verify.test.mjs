@@ -228,6 +228,133 @@ test('a Page without datasets passes the dry-run with 0 API requests', () => {
   assert.equal(r.report.apiRequests, 0);
 });
 
+// Boundary Dataset catalogue: one entry per spatial level, every column filled, confirmed live.
+const catalogue = JSON.parse(fs.readFileSync(path.join(here, '..', '..', 'references', 'boundary-catalogue.json'), 'utf8')).levels;
+const LEVELS = ['Gemeinde', 'Region', 'Tourismusdestination', 'Raumbeobachtung 1', 'Raumbeobachtung 2'];
+
+test('the catalogue has the five levels with every column filled', () => {
+  assert.deepEqual(catalogue.map(e => e.level), LEVELS);
+  for (const e of catalogue)
+    for (const col of ['dataset', 'keyField', 'keyType', 'nameField', 'snapshot', 'records'])
+      assert.ok(e[col] !== undefined && e[col] !== '', `${e.level} lacks ${col}`);
+  assert.equal(new Set(catalogue.map(e => e.dataset)).size, 5);
+});
+
+test('boundary-catalogue.md lists every entry with its dataset, key field and name field', () => {
+  const md = fs.readFileSync(path.join(here, '..', '..', 'references', 'boundary-catalogue.md'), 'utf8');
+  for (const e of catalogue)
+    for (const v of [e.level, e.dataset, e.keyField, e.nameField])
+      assert.ok(md.includes(`${v}`), `boundary-catalogue.md lacks ${v}`);
+});
+
+test('every catalogue entry matches data.gr.ch: record count, key field and type, name field', async () => {
+  for (const e of catalogue) {
+    const res = await fetch(`https://data.gr.ch/api/explore/v2.1/catalog/datasets/${e.dataset}`);
+    assert.equal(res.status, 200, `${e.dataset} not readable`);
+    const meta = await res.json();
+    const field = n => meta.fields.find(f => f.name === n);
+    assert.equal(meta.metas.default.records_count, e.records, `${e.level}: record count`);
+    assert.equal(field(e.keyField)?.type, e.keyType, `${e.level}: key field ${e.keyField}`);
+    assert.ok(field(e.nameField), `${e.level}: name field ${e.nameField}`);
+    assert.ok(meta.features.includes('geo'), `${e.level}: not a geo dataset`);
+  }
+});
+
+// Key-coverage check of the dry-run (live data.gr.ch, stable datasets, no hard-coded years).
+test('a data key absent from the Boundary Dataset is an error that lists the key', () => {
+  const r = run('dryrun-keys-unmatched', DRY_RUN_ARGS);
+  assert.equal(r.status, 1);
+  assert.deepEqual(summary(r.report), [['dry-run-key-coverage', 'error', 'index.html', 3]]);
+  assert.match(r.report.findings[0].message, /\b3932\b/);
+  assert.match(r.report.findings[0].message, /dvs_awt_regi_202502110/);
+});
+
+test('only keys within the default filters are checked', () => {
+  const r = run('dryrun-keys-filtered', DRY_RUN_ARGS);
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+});
+
+test('data covering only some boundary shapes passes, int data key against text boundary key', () => {
+  const r = run('dryrun-keys-partial-int-to-text', DRY_RUN_ARGS);
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+  assert.equal(r.report.stages.dryRun.status, 'pass');
+  assert.equal(r.report.apiRequests, 4);   // 2 dataset metadata + data keys + boundary keys
+});
+
+test('a map joined to a dataset outside the catalogue is an error', () => {
+  const r = run('dryrun-boundary-not-in-catalogue', DRY_RUN_ARGS);
+  assert.equal(r.status, 1);
+  assert.deepEqual(summary(r.report), [['dry-run-boundary-not-in-catalogue', 'error', 'index.html', 3]]);
+});
+
+test('a map joined on another field than the catalogue key is an error', () => {
+  const r = run('dryrun-boundary-wrong-key-field', DRY_RUN_ARGS);
+  assert.equal(r.status, 1);
+  assert.deepEqual(summary(r.report), [['dry-run-boundary-key-mismatch', 'error', 'index.html', 3]]);
+  assert.match(r.report.findings[0].message, /bfs_nummer/);
+});
+
+// Offline: the same check against a fake API, for paging and filters that live data can't pin down.
+function fakeApi({ dataKeys, boundaryKeys }) {
+  const requests = [];
+  const fetchJson = async url => {
+    requests.push(decodeURIComponent(url.replace(/\+/g, ' ')));
+    const u = new URL(url);
+    const id = u.pathname.split('/')[6];
+    if (!u.pathname.endsWith('/records')) {
+      const fields = id === 'dvs_awt_regi_202502110'
+        ? [{ name: 'bfs_nummer', type: 'text' }, { name: 'name', type: 'text' }]
+        : [{ name: 'key', type: 'int' }, { name: 'wert', type: 'int' }, { name: 'jahr', type: 'text' }];
+      return { status: 200, body: { fields } };
+    }
+    const all = id === 'dvs_awt_regi_202502110' ? boundaryKeys : dataKeys;
+    const field = u.searchParams.get('select');
+    const offset = Number(u.searchParams.get('offset') ?? 0), limit = Number(u.searchParams.get('limit'));
+    return { status: 200, body: { total_count: all.length, results: all.slice(offset, offset + limit).map(k => ({ [field]: k })) } };
+  };
+  return { fetchJson, requests };
+}
+const page = (params = '') => `<ods-dataset-context context="datactx,geoctx" datactx-dataset="data_set" ${params} geoctx-dataset="dvs_awt_regi_202502110">
+<div ods-color-gradient="colors" ods-color-gradient-context="datactx" ods-color-gradient-x="key" ods-color-gradient-serie="SUM(wert)">
+<ods-map scroll-wheel-zoom="false"><ods-map-layer context="geoctx" display="categories" color-by-field="bfs_nummer" color-categories="colors['colors']"></ods-map-layer></ods-map></div></ods-dataset-context>`;
+
+test('keys beyond the first API page are all compared', async () => {
+  const { dryRun } = await import('../dryrun.mjs');
+  const boundaryKeys = Array.from({ length: 250 }, (_, i) => String(1000 + i));
+  const dataKeys = Array.from({ length: 250 }, (_, i) => 1000 + i);
+  const { fetchJson, requests } = fakeApi({ dataKeys, boundaryKeys });
+  const { findings, apiRequests } = await dryRun({ html: page(), fetchJson });
+  assert.deepEqual(findings, []);
+  assert.equal(apiRequests, 2 + 3 + 3);
+  assert.equal(requests.filter(r => r.includes('/records')).length, 6);
+  const withLast = await dryRun({ html: page(), fetchJson: fakeApi({ dataKeys: [...dataKeys, 9999], boundaryKeys }).fetchJson });
+  assert.deepEqual(withLast.findings.map(f => f.rule), ['dry-run-key-coverage']);
+  assert.match(withLast.findings[0].message, /9999/);
+});
+
+test('literal refine and exclude filters become the where clause of the key query', async () => {
+  const { dryRun } = await import('../dryrun.mjs');
+  const { fetchJson, requests } = fakeApi({ dataKeys: [1000], boundaryKeys: ['1000'] });
+  const html = page(`datactx-parameters="{'refine.jahr': ['2020', '2021'], 'exclude.jahr': '2022'}"`);
+  const { findings } = await dryRun({ html, fetchJson });
+  assert.deepEqual(findings, []);
+  const keyQuery = requests.find(r => r.includes('data_set/records'));
+  assert.ok(keyQuery.includes('jahr in ("2020","2021")'), keyQuery);
+  assert.ok(keyQuery.includes('not jahr in ("2022")'), keyQuery);
+});
+
+test('a filter computed at runtime is ignored with a warning, never an error', async () => {
+  const { dryRun } = await import('../dryrun.mjs');
+  const { fetchJson } = fakeApi({ dataKeys: [1000], boundaryKeys: ['1000'] });
+  const computed = await dryRun({ html: page(`datactx-parameters="{'refine.jahr': ''+latest[0].jahr}"`), fetchJson });
+  assert.deepEqual(computed.findings.map(f => [f.rule, f.severity]), [['dry-run-key-coverage-filter-ignored', 'warning']]);
+  const guarded = page() + `<span hidden>{{ datactx.parameters['refine.jahr'] = datactx.parameters['refine.jahr'] || latest[0].jahr; '' }}</span>`;
+  const again = await dryRun({ html: guarded, fetchJson });
+  assert.deepEqual(again.findings.map(f => [f.rule, f.severity]), [['dry-run-key-coverage-filter-ignored', 'warning']]);
+});
+
 // The core reference explains what the lint enforces: every listed Widget and banned habit appears in it.
 test('core.md covers every listed Widget and every banned habit', () => {
   const refs = path.join(here, '..', '..', 'references');

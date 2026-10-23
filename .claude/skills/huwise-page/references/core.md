@@ -84,7 +84,7 @@ Most data Widgets create a **child scope**. Their variable is visible only on th
 Consequences:
 
 - Nest what reads a variable **inside** the element that defines it: the `ods-select` goes inside the `ods-facet-results` that provides its options, and the KPI text goes inside the `ods-aggregation`.
-- Never assign to a plain scope variable to "export" a value. A write from inside a child scope creates a new variable in that child scope. The parent never sees it, and an `ng-repeat` over it elsewhere silently renders nothing.
+- Never assign to a plain scope variable to "export" a value. A write from inside a child scope creates a new variable in that child scope. The parent never sees it, and an `ng-repeat` over it elsewhere silently renders nothing. The render stage reports this as error `ng-repeat-out-of-scope` when the collection is `undefined` where the repeat sits (checked in every explored state). It cannot see a repeat that never reaches the DOM, nor an array that is merely empty (the empty variable is reported as `widget-variable`).
 - Pass state between places only through **context parameters**, which are shared objects. That is why both allowed side-effect forms write only into `ctx.parameters`.
 
 ## v1 parameters vs ODSQL
@@ -181,7 +181,7 @@ data.gr.ch serves **Highcharts 6.1.4** (2018), not the 11.1.0 that ods-widgets 2
 
 - Every `ods-map` carries `scroll-wheel-zoom="false"`, so the map never traps the reader's scrolling on the Host Page (`map.js:328`; lint rule `required-widget-attribute`).
 - Join data to boundaries by hand: `ods-color-gradient`, then `color-categories` + `color-by-field`. Never use the native join.
-- Boundaries come only from the Boundary Dataset catalogue on data.gr.ch.
+- Boundaries come only from the Boundary Dataset catalogue on data.gr.ch (`boundary-catalogue.md`). The dry-run checks that every data key has a shape.
 
 ## Banned habits
 

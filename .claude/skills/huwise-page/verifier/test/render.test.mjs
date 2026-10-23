@@ -86,3 +86,65 @@ test('overflow only inside an allowed scroll container passes', () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.deepEqual(r.report.findings, []);
 });
+
+// ---------- Widget signals and state exploration (#23) ----------
+const stateLabels = r => r.report.stages.render.states.map(s => s.label);
+const stateOf = (r, label) => r.report.stages.render.states.find(s => s.label === label);
+
+test('an empty Widget variable fails with exactly that finding', () => {
+  const r = run('render-empty-variable', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['widget-variable', 'error']]);
+  assert.match(r.report.findings[0].message, /rows/);
+  assert.match(r.report.findings[0].message, /empty/);
+});
+
+test('a chart without points fails with exactly that finding', () => {
+  const r = run('render-chart-no-points', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['chart-no-points', 'error']]);
+});
+
+test('a Widget never rendered in any explored state (behind a tab) fails with exactly that finding', () => {
+  const r = run('render-widget-never-rendered-in-tab', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['widget-never-rendered', 'error']]);
+  assert.match(r.report.findings[0].message, /ods-table/);
+  assert.deepEqual(stateLabels(r), ['initial', 'tab "Zweite"']);
+});
+
+test('a broken Visualization reachable only via ng-click fails, in that state only', () => {
+  const r = run('render-broken-state-via-ng-click', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['widget-variable', 'error']]);
+  assert.equal(r.report.findings[0].location.state, 'ng-click "showRows = !showRows"');
+  assert.deepEqual(stateOf(r, 'initial').findings, []);
+});
+
+test('a broken state reachable only via an ods-select option fails, in that state only', () => {
+  const r = run('render-broken-state-via-ods-select', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['widget-variable', 'error']]);
+  assert.equal(r.report.findings[0].location.state, 'ods-select option "schlecht"');
+  assert.deepEqual(stateOf(r, 'ods-select option "gut"').findings, []);
+});
+
+test('ng-repeat over an out-of-scope variable is reported', () => {
+  const r = run('render-repeat-out-of-scope', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['ng-repeat-out-of-scope', 'error']]);
+  assert.match(r.report.findings[0].message, /rows/);
+});
+
+test('the clean Page with tabs, an ng-click and an ods-select passes in every state, with a 1200px screenshot per state', () => {
+  const r = run('render-tabs-clean');
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual(r.report.findings, []);
+  assert.deepEqual(stateLabels(r), ['initial', 'ng-click "more = !more"', 'ods-select option "a"', 'ods-select option "b"', 'tab "Diagramm"']);
+  for (const s of r.report.stages.render.states) {
+    assert.deepEqual(s.findings, []);
+    assert.equal(s.width, 1200);
+    assert.ok(fs.statSync(path.join(r.dir, 'verifier-output', s.screenshot)).size > 0);
+  }
+  assert.match(fs.readFileSync(path.join(r.dir, 'verifier-output', 'report.md'), 'utf8'), /tab "Diagramm"/);
+});

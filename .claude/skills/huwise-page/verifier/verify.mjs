@@ -53,11 +53,17 @@ function markdown(report) {
   else {
     lines.push('| Severity | Rule | Location | Message |', '|---|---|---|---|');
     for (const f of report.findings) {
-      const where = f.location.widths ? `render at ${f.location.widths.join('/')}px` : `${f.location.file}:${f.location.line}:${f.location.column}`;
+      const where = f.location.widths ? `render at ${f.location.widths.join('/')}px, state: ${f.location.state}` :`${f.location.file}:${f.location.line}:${f.location.column}`;
       lines.push(`| ${f.severity} | ${f.rule} | ${where} | ${f.message.replace(/\|/g, '\\|')} |`);
     }
   }
   for (const s of report.stages.render.screenshots ?? []) lines.push(`- Screenshot at ${s.width}px: ${s.file}`);
+  const states = report.stages.render.states ?? [];
+  if (states.length) {
+    lines.push('', '## Explored states', '', '| State | Findings | Screenshot |', '|---|---|---|');
+    for (const s of states)
+      lines.push(`| ${s.label.replace(/\|/g, '\\|')} | ${s.findings.join(', ') || 'none'} | ${s.screenshot} (${s.width}px) |`);
+  }
   return lines.join('\n') + '\n';
 }
 
@@ -102,7 +108,7 @@ if (stages.lint.status === 'fail' || stages.dryRun.status === 'fail') {
   const widths = opts.iterate ? ITERATE_WIDTHS : WIDTHS[opts.embedSize];
   const r = await render({ html, css, targetHeight: opts.targetHeight, widths, outDir, scrollSelectors });
   findings.push(...r.findings);
-  stages.render = { status: stageStatus(r.findings), screenshots: r.screenshots, platformConfig: r.platformConfig };
+  stages.render = { status: stageStatus(r.findings), screenshots: r.screenshots, states: r.states, platformConfig: r.platformConfig };
 }
 
 const errors = findings.filter(f => f.severity === 'error');

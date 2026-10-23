@@ -1,0 +1,10 @@
+{
+  "description": "Closed Boundary Dataset catalogue. One entry per spatial level, all on data.gr.ch. Read by verifier/dryrun.mjs; confirmed live by the verifier tests. Edit only through the deliberate add step (a new level, or a hand update for a new snapshot).",
+  "levels": [
+    { "level": "Gemeinde", "dataset": "dvs_awt_regi_202502110", "records": 100, "keyField": "bfs_nummer", "keyType": "text", "nameField": "name", "snapshot": "01.01.2025" },
+    { "level": "Region", "dataset": "dvs_awt_regi_20250211", "records": 11, "keyField": "name", "keyType": "text", "nameField": "name", "snapshot": "01.01.2025" },
+    { "level": "Tourismusdestination", "dataset": "dvs_awt_econ_202601260", "records": 18, "keyField": "tourismusdestination", "keyType": "text", "nameField": "tourismusdestination", "snapshot": "n/a" },
+    { "level": "Raumbeobachtung 1", "dataset": "dvs_awt_regi_202503250", "records": 203, "keyField": "u1_id", "keyType": "int", "nameField": "u1_name", "snapshot": "2025" },
+    { "level": "Raumbeobachtung 2", "dataset": "dvs_awt_regi_202503251", "records": 21, "keyField": "u2_id", "keyType": "int", "nameField": "u2_name", "snapshot": "2025" }
+  ]
+}

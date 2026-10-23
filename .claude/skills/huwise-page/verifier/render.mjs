@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { chromium } from 'playwright';
+import { annotate } from './annotate.mjs';
 
 const PORTAL = 'https://data.gr.ch';
 const LIVE_PAGE = `${PORTAL}/pages/mittelverwendung-im-bereich-landeslotterie/?headless=true&flg=de-ch`;
@@ -11,6 +12,8 @@ const DAY = 864e5;
 const here = import.meta.dirname;
 const SETTLE_QUIET_MS = 1500;
 const SETTLE_CAP_MS = 30000;
+const OPTION_CAP = 12; // ods-select options explored per select
+const MAX_STATES = 40; // explored states per width
 
 export const WIDTHS = { Gross: [375, 720, 1200], Klein: [375, 720] };
 export const ITERATE_WIDTHS = [1200];
@@ -141,17 +144,59 @@ export function serve(harness, dist) {
 }
 
 // runs inside the iframe
-const inspectFrame = allowed => {
+const inspectFrame = ({ allowed, chartIds, repeats }) => {
   const label = el => el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
   const W = document.documentElement.clientWidth;
   // Content height: the lowest edge inside the Page plus the portal wrapper's bottom margin. The wrapper's
   // own min-height is a harness artefact (the real iframe body has no fixed height), so scrollHeight is not used.
   const main = document.querySelector('main');
   const bottoms = [...document.querySelectorAll('.page-layout, .page-layout *')].map(el => el.getBoundingClientRect().bottom + window.scrollY);
-  const out = { text: [], overflow: 0, offenders: [], height: Math.ceil(Math.max(0, ...bottoms) + (main ? parseFloat(getComputedStyle(main).marginBottom) || 0 : 0)) };
+  const out = { text: [], signals: [], present: [], overflow: 0, offenders: [], height: Math.ceil(Math.max(0, ...bottoms) + (main ? parseFloat(getComputedStyle(main).marginBottom) || 0 : 0)) };
   const txt = document.body.innerText;
   if (txt.includes('{{')) out.text.push('{{');
   for (const t of ['NaN', 'undefined']) if (new RegExp(`\\b${t}\\b`).test(txt)) out.text.push(t);
+  // Widget signals. The ids were put on the source elements by annotate.mjs.
+  const ng = window.angular;
+  out.present = [...document.querySelectorAll('[data-verify-id]')].map(el => el.getAttribute('data-verify-id'));
+  // a Widget variable that is unset, empty or NaN (attribute Widgets name their variable in the attribute)
+  const VARIABLE_WIDGETS = /^(?:data-|x-)?ods-(results|facet-results|aggregation|adv-analysis)$/;
+  const DEFAULT_VARIABLE = { results: 'results', 'facet-results': 'results', aggregation: 'aggregation' };
+  for (const el of document.querySelectorAll('[data-verify-id]')) {
+    const attr = [...el.attributes].find(a => VARIABLE_WIDGETS.test(a.name));
+    if (!attr || el.hasAttribute('ng-repeat')) continue;
+    const kind = attr.name.match(VARIABLE_WIDGETS)[1];
+    const names = (attr.value.trim() || DEFAULT_VARIABLE[kind] || '').split(',').map(s => s.trim()).filter(Boolean);
+    const scope = ng.element(el).scope();
+    for (const name of names) {
+      let v;
+      try { v = scope.$eval(name); } catch { v = undefined; }
+      const where = `ods-${kind}="${attr.value}"`;
+      if (v === undefined || v === null) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is unset` });
+      else if (Array.isArray(v) && v.length === 0) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is empty` });
+      else if (typeof v === 'number' && Number.isNaN(v)) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is NaN` });
+    }
+  }
+  // a chart without points
+  for (const id of chartIds) {
+    for (const el of document.querySelectorAll(`[data-verify-id="${id}"]`)) {
+      if (!el.querySelector('.highcharts-container')) out.signals.push({ rule: 'chart-no-points', message: 'A chart was not drawn (no Highcharts container)' });
+      else if (el.querySelector('.highcharts-no-data') || !el.querySelector('.highcharts-point, .highcharts-graph, .highcharts-series path'))
+        out.signals.push({ rule: 'chart-no-points', message: 'A chart is drawn without points' });
+    }
+  }
+  // ng-repeat over a variable that is undefined where the repeat sits (typically a Widget's variable used
+  // outside the element that owns it): it renders nothing, silently.
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT);
+  for (let c = walker.nextNode(); c; c = walker.nextNode()) {
+    const m = c.nodeValue.match(/^\s*ngRepeat:\s*(.+?)\s*$/);
+    if (!m || !repeats.includes(m[1])) continue;
+    const parts = m[1].match(/^(?:\([^)]*\)|[\w$]+(?:\s*,\s*[\w$]+)?)\s+in\s+(.+?)(?:\s+track by\s.+)?$/);
+    if (!parts) continue;
+    const collection = parts[1].split(/(?<!\|)\|(?!\|)/)[0].trim();
+    let v;
+    try { v = ng.element(c).scope().$eval(collection); } catch { continue; }
+    if (v === undefined) out.signals.push({ rule: 'ng-repeat-out-of-scope', message: `ng-repeat="${m[1]}": "${collection}" is undefined where the repeat sits, so it renders nothing. A Widget's variable is visible only inside the element that owns it` });
+  }
   out.overflow = document.documentElement.scrollWidth - W;
   if (out.overflow > 0) {
     const inAllowed = el => allowed.some(s => el.closest(s));
@@ -162,6 +207,40 @@ const inspectFrame = allowed => {
   }
   return out;
 };
+
+// runs inside the iframe: every interaction that can change the Page's state, in document order.
+// Author-written ng-click only (Widget templates carry their own), ods-simple-tabs tabs, and the
+// options of every ods-select. Selecting an option clicks its list item; the dropdown need not be open.
+const listActions = ({ clickIds, optionCap }) => {
+  const found = [];
+  const capped = [];
+  const text = el => el.innerText.trim().replace(/\s+/g, ' ');
+  document.querySelectorAll('.ods-simple-tabs-container').forEach((tabs, t) =>
+    tabs.querySelectorAll('.ods-simple-tabs-nav-link').forEach(a =>
+      found.push({ el: a, key: `tab:${t}:${a.id}`, label: `tab "${text(a)}"`, active: a.classList.contains('ods-simple-tabs-nav-link-active') })));
+  const clickCount = {};
+  document.querySelectorAll('[data-verify-id]').forEach(el => {
+    const id = el.getAttribute('data-verify-id');
+    const expr = clickIds[id];
+    if (expr === undefined) return;
+    clickCount[id] = (clickCount[id] ?? -1) + 1;
+    found.push({ el, key: `click:${id}:${clickCount[id]}`, label: `ng-click "${expr}"` });
+  });
+  document.querySelectorAll('.odswidget-select').forEach((select, s) => {
+    const items = [...select.querySelectorAll('li.odswidget-select-dropdown-menu-item[role="option"]')]
+      .filter(li => !li.classList.contains('odswidget-select-dropdown-actions-select-all') && !li.classList.contains('odswidget-select-dropdown-no-options'))
+      .filter(li => !li.classList.contains('odswidget-select-dropdown-menu-selected'));
+    if (items.length > optionCap) capped.push({ select: s, total: items.length });
+    items.slice(0, optionCap).forEach(li => {
+      const label = text(li);
+      found.push({ el: li, key: `select:${s}:${label}`, label: `ods-select option "${label}"` });
+    });
+  });
+  found.sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+  window.__verifyActions = Object.fromEntries(found.map(f => [f.key, f.el]));
+  return { actions: found.map(({ key, label, active }) => ({ key, label, active: !!active })), capped };
+};
+const performAction = key => window.__verifyActions[key]?.click();
 
 async function settle(page, net, frame) {
   const t0 = Date.now();
@@ -174,18 +253,31 @@ async function settle(page, net, frame) {
   return false;
 }
 
-/** Renders the Page; returns { findings, screenshots, platformConfig }. */
+
+const INITIAL = 'initial';
+
+/** Renders the Page and explores its states; returns { findings, screenshots, states, platformConfig }.
+ *  States are explored at every width: first the initial state, then each tab, author-written ng-click and
+ *  ods-select option in document order, including the ones a state makes reachable. A state is cumulative
+ *  (an earlier click stays in effect). Every signal is re-checked in every state. */
 export async function render({ html, css, targetHeight, widths, outDir, scrollSelectors }) {
   const cfg = await platformConfig();
-  const server = await serve(harnessHtml(cfg, html, css), findWidgetsDist());
+  const marked = annotate(html);
+  const entries = Object.entries(marked.elements);
+  const clickIds = Object.fromEntries(entries.filter(([, e]) => e.click !== null).map(([id, e]) => [id, e.click]));
+  const chartIds = entries.filter(([, e]) => e.kind === 'ods-chart').map(([id]) => id);
+  const server = await serve(harnessHtml(cfg, marked.html, css), findWidgetsDist());
   const browser = await chromium.launch();
   const perWidth = [];
   const screenshots = [];
+  const seen = new Set();
+  const states = new Map();
+  fs.mkdirSync(outDir, { recursive: true });
   try {
     for (const w of widths) {
       const page = await browser.newPage({ viewport: { width: w, height: targetHeight } });
       const net = { inflight: 0, last: Date.now() };
-      const issues = [];
+      let issues = [];
       const apiFailed = new Set();
       page.on('request', () => { net.inflight++; net.last = Date.now(); });
       const done = () => { net.inflight = Math.max(0, net.inflight - 1); net.last = Date.now(); };
@@ -204,38 +296,68 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
       page.on('pageerror', e => issues.push({ rule: 'uncaught-exception', message: String(e).slice(0, 300) }));
       await page.goto(`http://127.0.0.1:${server.address().port}/host.html?w=${w}&h=${targetHeight}`);
       const frame = page.frames().find(f => f.url().endsWith('/harness.html'));
-      const settled = await settle(page, net, frame);
-      const r = await frame.evaluate(inspectFrame, scrollSelectors);
-      fs.mkdirSync(outDir, { recursive: true });
-      const shot = `screenshot-${w}.png`;
-      await page.locator('#f').screenshot({ path: path.join(outDir, shot) });
-      screenshots.push({ width: w, file: shot });
-      if (!settled) issues.push({ rule: 'not-settled', message: `Page did not settle within ${SETTLE_CAP_MS / 1000}s` });
-      for (const t of r.text) issues.push({ rule: 'unresolved-text', message: `Visible text contains "${t}"` });
-      if (r.overflow > 0) issues.push({ rule: 'overflow', message: `Horizontal overflow; offending elements: ${r.offenders.join(', ') || 'none identified'}` });
-      if (r.height > targetHeight) issues.push({ rule: 'content-too-tall', message: `Content is taller than the Target Height (${targetHeight}px)`, detail: `${r.height}px` });
-      // a failed API request also logs a console error: report the cause once
-      perWidth.push({ w, issues: issues.filter(i => !(i.rule === 'console-error' && apiFailed.has(i.url))) });
+
+      // settles, re-checks every signal, screenshots; returns nothing, records into perWidth and states
+      const check = async label => {
+        const settled = await settle(page, net, frame);
+        const r = await frame.evaluate(inspectFrame, { allowed: scrollSelectors, chartIds, repeats: marked.repeats });
+        for (const id of r.present) seen.add(id);
+        const state = states.get(label) ?? states.set(label, { label, index: states.size, rules: [] }).get(label);
+        const shot = label === INITIAL ? `screenshot-${w}.png` : `state-${state.index}-${w}.png`;
+        await page.locator('#f').screenshot({ path: path.join(outDir, shot) });
+        if (label === INITIAL) screenshots.push({ width: w, file: shot });
+        Object.assign(state, { width: w, screenshot: shot });
+        const found = issues.filter(i => !(i.rule === 'console-error' && apiFailed.has(i.url)));
+        issues = [];
+        // a failed API request also logs a console error: report the cause once
+        if (!settled) found.push({ rule: 'not-settled', message: `Page did not settle within ${SETTLE_CAP_MS / 1000}s` });
+        found.push(...r.signals);
+        for (const t of r.text) found.push({ rule: 'unresolved-text', message: `Visible text contains "${t}"` });
+        if (r.overflow > 0) found.push({ rule: 'overflow', message: `Horizontal overflow; offending elements: ${r.offenders.join(', ') || 'none identified'}` });
+        if (r.height > targetHeight) found.push({ rule: 'content-too-tall', message: `Content is taller than the Target Height (${targetHeight}px)`, detail: `${r.height}px` });
+        for (const i of found) {
+          perWidth.push({ w, state: label, issue: i });
+          if (!state.rules.includes(i.rule)) state.rules.push(i.rule);
+        }
+      };
+
+      await check(INITIAL);
+      const visited = new Set();
+      for (;;) {
+        const { actions, capped } = await frame.evaluate(listActions, { clickIds, optionCap: OPTION_CAP });
+        for (const a of actions) if (a.active) visited.add(a.key); // the initial state already shows the active tab
+        for (const c of capped)
+          perWidth.push({ w, state: INITIAL, issue: { rule: 'select-options-capped', warning: true, message: `ods-select number ${c.select + 1} has ${c.total} options; only the first ${OPTION_CAP} are explored as states` } });
+        const next = actions.find(a => !visited.has(a.key));
+        if (!next || visited.size >= MAX_STATES) break;
+        visited.add(next.key);
+        await frame.evaluate(performAction, next.key);
+        await check(next.label);
+      }
       await page.close();
     }
   } finally {
     await browser.close();
     server.close();
   }
-  // one finding per distinct problem, listing the widths where it occurs
+  // a Widget in the source that no explored state ever rendered
+  for (const [id, e] of entries)
+    if (e.kind !== 'ng-click' && !seen.has(id))
+      perWidth.push({ w: widths, state: null, issue: { rule: 'widget-never-rendered', message: `${e.label} (line ${e.line}) is never rendered in any explored state (behind an ng-if, or in a tab, click or option state that was not reached?)` } });
+  // one finding per distinct problem and state, listing the widths where it occurs
   const byKey = new Map();
-  for (const { w, issues } of perWidth)
-    for (const i of issues) {
-      const k = `${i.rule}\0${i.message}`;
-      if (!byKey.has(k)) byKey.set(k, { rule: i.rule, severity: i.rule === 'not-settled' ? 'warning' : 'error', message: i.message, location: { widths: [] }, details: [] });
-      const f = byKey.get(k);
-      f.location.widths.push(w);
-      if (i.detail) f.details.push(`${w}px: ${i.detail}`);
-    }
+  for (const { w, state, issue: i } of perWidth) {
+    const k = `${i.rule}\0${i.message}\0${state}`;
+    if (!byKey.has(k)) byKey.set(k, { rule: i.rule, severity: i.rule === 'not-settled' || i.warning ? 'warning' : 'error', message: i.message, location: { widths: [], state: state ?? 'all states' }, details: [] });
+    const f = byKey.get(k);
+    for (const x of [].concat(w)) if (!f.location.widths.includes(x)) f.location.widths.push(x);
+    if (i.detail) f.details.push(`${w}px: ${i.detail}`);
+  }
   const findings = [...byKey.values()].map(({ details, ...f }) => (details.length ? { ...f, message: `${f.message} (${details.join(', ')})` } : f));
   return {
     findings,
     screenshots,
+    states: [...states.values()].map(({ label, width, screenshot, rules }) => ({ label, width, screenshot, findings: rules })),
     platformConfig: { source: cfg.source, fetchedAt: new Date(cfg.fetchedAt).toISOString(), themeRev: cfg.themeRev },
   };
 }

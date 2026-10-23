@@ -1,0 +1,21 @@
+<div class="page" ng-init="opts = ['a', 'b']">
+  <button type="button" ng-click="more = !more">Mehr</button>
+  <p ng-if="more">Mehr Text</p>
+  <ods-select options="opts" selected-values="sel"></ods-select>
+  <ods-dataset-context context="datactx" datactx-dataset="dvs_awt_econ_20250203">
+    <ods-simple-tabs>
+      <ods-simple-tab label="Zeilen">
+        <div ods-results="rows" ods-results-context="datactx" ods-results-max="1"><p>Zeilen: {{ rows.length }}</p></div>
+      </ods-simple-tab>
+      <ods-simple-tab label="Diagramm">
+        <div class="chart-area">
+          <ods-chart timescale="year">
+            <ods-chart-query context="datactx" field-x="datum" timescale="year">
+              <ods-chart-serie expression-y="betriebe" function-y="SUM" chart-type="column"></ods-chart-serie>
+            </ods-chart-query>
+          </ods-chart>
+        </div>
+      </ods-simple-tab>
+    </ods-simple-tabs>
+  </ods-dataset-context>
+</div>

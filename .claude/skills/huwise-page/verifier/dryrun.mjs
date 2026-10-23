@@ -10,12 +10,25 @@
 //
 // It talks to the public Explore API v2.1. Inside Claude Code the same facts are available through the
 // data.gr.ch MCP (the skill uses it while planning); a Node script cannot call MCP tools, so the CLI
-// always uses the API. Key coverage against a Boundary Dataset is not part of this stage.
+// always uses the API.
+//
+// Key coverage (errors): for each map layer fed by an ods-color-gradient (the hand join), every data key
+// within the data context's literal default filters must have a shape in the Boundary Dataset, compared
+// as strings. The Boundary Dataset must be in the closed catalogue (references/boundary-catalogue.json)
+// and be joined on the catalogue's key field. Shapes without data are not an error. Filters computed at
+// runtime can't be evaluated: they are ignored, with a warning.
+import fs from 'node:fs';
+import path from 'node:path';
 import { parseFragment } from 'parse5';
 import { elements, textNodes } from './lint.mjs';
 
+const CATALOGUE = JSON.parse(fs.readFileSync(
+  path.join(import.meta.dirname, '..', 'references', 'boundary-catalogue.json'), 'utf8')).levels;
+
 export const API_BASE = process.env.HUWISE_API_BASE ?? 'https://data.gr.ch/api/explore/v2.1';
 const FACET_CAP = 100;   // group_by returns at most 100 values per request
+const MAX_KEYS = 10000;  // the API refuses offset + limit above this
+const LIST_CAP = 20;     // keys named in one message
 // Fields every record carries besides the dataset's own.
 const SYSTEM_FIELDS = new Set(['recordid', 'record_timestamp', 'datasetid', '_id', '_full_count', '_geom', '_bbox']);
 const IDENT = /^[A-Za-z_]\w*$/;
@@ -51,12 +64,87 @@ function objectKeys(value) {
   return keys;
 }
 
+// Entries of a literal object attribute value, values kept as raw source: [{ key, raw }]. Null when not an object.
+function objectEntries(value) {
+  const s = (value ?? '').trim();
+  if (!s.startsWith('{') || !s.endsWith('}')) return null;
+  const body = s.slice(1, -1), entries = [];
+  for (let i = 0; i < body.length;) {
+    const k = /^\s*(?:(['"])((?:(?!\1)[^\\])*)\1|([\w.-]+))\s*:\s*/.exec(body.slice(i));
+    if (!k) break;
+    i += k[0].length;
+    let depth = 0, quote = null, j = i;
+    for (; j < body.length; j++) {
+      const c = body[j];
+      if (quote) { if (c === '\\') j++; else if (c === quote) quote = null; }
+      else if (c === "'" || c === '"') quote = c;
+      else if ('[({'.includes(c)) depth++;
+      else if ('])}'.includes(c)) depth--;
+      else if (c === ',' && depth === 0) break;
+    }
+    entries.push({ key: k[2] ?? k[3], raw: body.slice(i, j).trim() });
+    i = j + 1;
+  }
+  return entries;
+}
+
+// A raw value that is a plain literal (string, number, or an array of them) as a list of strings; else null.
+function literalValues(raw) {
+  const item = /\s*(?:(['"])((?:(?!\1)[^\\])*)\1|(-?\d+(?:\.\d+)?))\s*/y;
+  const one = new RegExp(`^${item.source}$`).exec(raw);
+  if (one) return [one[2] ?? one[3]];
+  const arr = /^\[(.*)\]$/s.exec(raw);
+  if (!arr) return null;
+  const values = [];
+  const parts = arr[1].trim() ? arr[1].split(',') : null;
+  if (!parts) return null;
+  for (const part of parts) {
+    const m = new RegExp(`^${item.source}$`).exec(part);
+    if (!m) return null;
+    values.push(m[2] ?? m[3]);
+  }
+  return values;
+}
+
+// Default filters of a context: literal refine/exclude entries, and the fields whose default is computed.
+function defaultFilters(paramsValue, ctx, html) {
+  const filters = [], dynamic = new Set();
+  for (const { key, raw } of objectEntries(paramsValue) ?? []) {
+    const m = key.match(/^(refine|exclude)\.(.+)$/);
+    if (!m) continue;
+    const values = literalValues(raw);
+    if (values) filters.push({ kind: m[1], field: m[2], values });
+    else dynamic.add(m[2]);
+  }
+  // Guarded defaults and other writes into the context's parameters happen at runtime.
+  const write = new RegExp(`\\b${ctx}\\.parameters\\[\\s*(['"])(?:refine|exclude)\\.(\\w+)\\1\\s*\\]\\s*=(?!=)`, 'g');
+  for (const [, , field] of html.matchAll(write)) if (!filters.some(f => f.field === field)) dynamic.add(field);
+  return { filters, dynamic };
+}
+
+// ODSQL where clause for literal filters. A filter that can't be expressed joins `ignored`.
+function whereClause(filters, types, ignored) {
+  const parts = [];
+  for (const { kind, field, values } of filters) {
+    const type = types.get(field);
+    let list = null;
+    if (!IDENT.test(field)) list = null;
+    else if (type === 'text') list = values.map(v => `"${v.replace(/["\\]/g, '\\$&')}"`);
+    else if ((type === 'int' || type === 'double') && values.every(v => Number.isFinite(Number(v)))) list = values.map(Number);
+    if (!list) { ignored.add(field); continue; }
+    parts.push(`${kind === 'exclude' ? 'not ' : ''}${field} in (${list.join(',')})`);
+  }
+  return parts.join(' and ');
+}
+
 function collect(html) {
   const doc = parseFragment(html, { sourceCodeLocationInfo: true });
   const datasets = new Map();   // context name -> { id, loc }
   const refs = [];              // { ctx, field, loc, what }
   const maps = [];              // { ctx, field, keys, loc, attr }
   const queries = [];           // { ctx, params, loc }
+  const gradients = new Map();  // gradient variable -> { dataCtx, field }
+  const layers = [];            // map layers fed by a gradient: { variable, geoCtx, keyField, loc }
   const els = [...elements(doc)];
 
   const ref = (ctx, field, loc, what) => { if (ctx && field) refs.push({ ctx, field, loc, what }); };
@@ -66,7 +154,10 @@ function collect(html) {
     if (el.tagName !== 'ods-dataset-context' && !hasAttr(el, 'ods-dataset-context')) continue;
     for (const ctx of (attrOf(el, 'context')?.value ?? '').split(/[\s,\[\]]+/).filter(Boolean)) {
       const d = attrOf(el, `${ctx}-dataset`);
-      if (d && /^[\w-]+$/.test(d.value.trim())) datasets.set(ctx, { id: d.value.trim(), loc: d.loc });
+      if (d && /^[\w-]+$/.test(d.value.trim())) {
+        const params = attrOf(el, `${ctx}-parameters`)?.value;
+        datasets.set(ctx, { id: d.value.trim(), loc: d.loc, ...defaultFilters(params, ctx, html) });
+      }
     }
   }
   const ctxOf = (el, ...names) => {
@@ -127,6 +218,9 @@ function collect(html) {
       if (x) fieldRef(ctx, x.value.trim(), x.loc, 'color-gradient x');
       const inner = serie?.value.match(/^\s*\w+\(\s*(\w+)\s*\)\s*$/)?.[1];
       if (inner) fieldRef(ctx, inner, serie.loc, 'color-gradient serie');
+      const variable = attrOf(el, 'ods-color-gradient').value.trim();
+      if (ctx && x && IDENT.test(x.value.trim()) && /^\w+$/.test(variable) && !gradients.has(variable))
+        gradients.set(variable, { dataCtx: ctx, field: x.value.trim() });
     }
     if (el.tagName === 'ods-map-layer' || hasAttr(el, 'ods-map-layer')) {
       const ctx = ctxOf(el, 'context');
@@ -136,6 +230,9 @@ function collect(html) {
       const cats = attrOf(el, 'color-categories');
       const keys = cats && objectKeys(cats.value);
       if (keys && ctx && by && IDENT.test(by.value.trim())) maps.push({ ctx, field: by.value.trim(), keys, loc: cats.loc, attr: 'color-categories' });
+      // The hand join: color-categories fed by an ods-color-gradient variable ("colors['colors']").
+      const fed = cats?.value.match(/^\s*(\w+)\s*(?:\[\s*(['"])colors\2\s*\]|\.colors)\s*$/)?.[1];
+      if (fed && ctx && by && IDENT.test(by.value.trim())) layers.push({ variable: fed, geoCtx: ctx, keyField: by.value.trim(), loc: cats.loc });
     }
     if (hasAttr(el, 'ods-adv-analysis')) {
       const get = n => attrOf(el, `ods-adv-analysis-${n}`);
@@ -159,15 +256,33 @@ function collect(html) {
     }
   }
   for (const node of textNodes(doc)) scanExpression(node.value, node.sourceCodeLocation, node.parentNode);
-  return { datasets, refs, maps, queries };
+  const joins = layers.filter(l => gradients.has(l.variable)).map(l => ({ ...gradients.get(l.variable), ...l }));
+  return { datasets, refs, maps, queries, joins };
 }
+
+// All distinct values of a field, one API request per 100, ordered so the pages don't overlap.
+async function distinctValues(get, datasetId, field, where) {
+  const values = [];
+  for (let offset = 0; ; offset += FACET_CAP) {
+    const qs = new URLSearchParams({ select: field, group_by: field, order_by: field, limit: String(FACET_CAP), offset: String(offset) });
+    if (where) qs.set('where', where);
+    const { status, body } = await get(`/catalog/datasets/${encodeURIComponent(datasetId)}/records?${qs}`);
+    if (status !== 200) return { error: `HTTP ${status}. ${body?.message ?? ''}`.trim() };
+    values.push(...body.results.map(r => r[field]).filter(v => v !== null && v !== undefined).map(String));
+    const total = body.total_count ?? values.length;
+    if (offset + FACET_CAP >= total) return { values };
+    if (offset + 2 * FACET_CAP > MAX_KEYS) return { values, truncated: true };
+  }
+}
+
+const listKeys = keys => keys.slice(0, LIST_CAP).join(', ') + (keys.length > LIST_CAP ? ` and ${keys.length - LIST_CAP} more` : '');
 
 export async function dryRun({ html, fetchJson = defaultFetchJson }) {
   const findings = [];
   let apiRequests = 0;
   const get = async path => { apiRequests++; return fetchJson(`${API_BASE}${path}`); };
   const collected = collect(html);
-  const { datasets, maps, queries } = collected;
+  const { datasets, maps, queries, joins } = collected;
   // One reference per context, field and place, however many attributes name it.
   const refs = [...new Map(collected.refs.map(r =>
     [`${r.ctx}:${r.field}@${r.loc.startLine}:${r.loc.startCol}`, r])).values()];
@@ -178,13 +293,16 @@ export async function dryRun({ html, fetchJson = defaultFetchJson }) {
     for (const [, { id, loc }] of datasets) {
       if (fields.has(id)) continue;
       const { status, body } = await get(`/catalog/datasets/${encodeURIComponent(id)}`);
-      if (status === 200 && Array.isArray(body?.fields)) fields.set(id, new Set(body.fields.map(f => f.name)));
+      if (status === 200 && Array.isArray(body?.fields)) fields.set(id, new Map(body.fields.map(f => [f.name, f.type])));
       else {
         fields.set(id, null);
         findings.push(finding('dry-run-dataset-unavailable', loc, `Dataset "${id}" could not be read (HTTP ${status}). Check the ID on data.gr.ch`));
       }
     }
-    const known = ctx => { const d = datasets.get(ctx); return d && fields.get(d.id) ? { id: d.id, names: fields.get(d.id) } : null; };
+    const known = ctx => {
+      const d = datasets.get(ctx), types = d && fields.get(d.id);
+      return types ? { id: d.id, types, names: types, filters: d.filters, dynamic: d.dynamic } : null;
+    };
 
     const missing = new Set();   // "ctx:field" already reported as missing
     for (const r of refs) {
@@ -229,6 +347,50 @@ export async function dryRun({ html, fetchJson = defaultFetchJson }) {
           `${m.attr} does not match the values of "${m.field}", so these fall back to the default palette.` +
           (absent.length ? ` Missing from the map: ${absent.join(', ')}.` : '') +
           (extra.length ? ` Not in the data: ${extra.join(', ')}.` : '')));
+    }
+
+    // Key coverage: every data key (within the default filters) has a shape in the Boundary Dataset.
+    const boundaryKeys = new Map();   // "dataset:field" -> result of distinctValues
+    for (const j of joins) {
+      const data = known(j.dataCtx), geo = known(j.geoCtx);
+      if (!data || !geo) continue;
+      const entry = CATALOGUE.find(e => e.dataset === geo.id);
+      if (!entry) {
+        findings.push(finding('dry-run-boundary-not-in-catalogue', j.loc,
+          `Dataset "${geo.id}" (context ${j.geoCtx}) is not in the Boundary Dataset catalogue. Boundary Datasets come only from the closed catalogue (references/boundary-catalogue.md): ${CATALOGUE.map(e => `${e.level} ${e.dataset}`).join(', ')}`));
+        continue;
+      }
+      if (j.keyField !== entry.keyField) {
+        findings.push(finding('dry-run-boundary-key-mismatch', j.loc,
+          `The ${entry.level} Boundary Dataset "${entry.dataset}" is joined on "${j.keyField}". Its key field is "${entry.keyField}" (${entry.keyType}): set color-by-field to it`));
+        continue;
+      }
+      if (missing.has(`${j.dataCtx}:${j.field}`) || !data.names.has(j.field) || !geo.names.has(entry.keyField)) continue;
+
+      const ignored = new Set(data.dynamic);
+      const where = whereClause(data.filters, data.types, ignored);
+      if (ignored.size)
+        findings.push(finding('dry-run-key-coverage-filter-ignored', j.loc,
+          `Key coverage of "${j.field}" was checked without the default filter on ${[...ignored].join(', ')}: it is computed at runtime or not a literal. Keys of every period are compared. Put a literal filter in the context's parameters to check what the reader sees first`, 'warning'));
+
+      const dataKeys = await distinctValues(get, data.id, j.field, where);
+      const cacheKey = `${entry.dataset}:${entry.keyField}`;
+      if (!boundaryKeys.has(cacheKey)) boundaryKeys.set(cacheKey, await distinctValues(get, entry.dataset, entry.keyField, ''));
+      const shapes = boundaryKeys.get(cacheKey);
+      const failed = dataKeys.error ?? shapes.error;
+      if (failed) {
+        findings.push(finding('dry-run-query-failed', j.loc, `Keys for the coverage check could not be read: ${failed}`));
+        continue;
+      }
+      if (dataKeys.truncated || shapes.truncated) {
+        findings.push(finding('dry-run-key-coverage-truncated', j.loc, `More than ${MAX_KEYS} keys: key coverage could not be checked completely`, 'warning'));
+        continue;
+      }
+      const have = new Set(shapes.values);
+      const unmatched = [...new Set(dataKeys.values)].filter(k => !have.has(k));
+      if (unmatched.length)
+        findings.push(finding('dry-run-key-coverage', j.loc,
+          `${unmatched.length} key${unmatched.length === 1 ? '' : 's'} of "${j.field}" (dataset "${data.id}") ${unmatched.length === 1 ? 'has' : 'have'} no shape in the ${entry.level} Boundary Dataset "${entry.dataset}" (${entry.keyField}, snapshot ${entry.snapshot}): ${listKeys(unmatched)}. These areas would not be drawn. Filter the period or check the snapshot`));
     }
   } catch (err) {
     findings.push(finding('dry-run-unreachable', { startLine: 1, startCol: 1 }, `data.gr.ch could not be reached: ${err.message}`));
