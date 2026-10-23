@@ -9,13 +9,14 @@
       </ods-simple-tab>
       <ods-simple-tab label="Diagramm">
         <div class="chart-area">
-          <ods-chart timescale="year">
+          <div class="hw-chart-area"><ods-chart timescale="year">
             <ods-chart-query context="datactx" field-x="datum" timescale="year">
               <ods-chart-serie expression-y="betriebe" function-y="SUM" chart-type="column"></ods-chart-serie>
             </ods-chart-query>
-          </ods-chart>
+          </ods-chart></div>
         </div>
       </ods-simple-tab>
     </ods-simple-tabs>
   </ods-dataset-context>
 </div>
+<div class="hw-footer">Letzte Aktualisierung</div>

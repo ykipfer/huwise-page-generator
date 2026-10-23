@@ -1,11 +1,12 @@
 <div class="page">
   <ods-dataset-context context="datactx" datactx-dataset="dvs_awt_econ_20250203" datactx-parameters="{'refine.gemeinde_name': 'Kein Ort mit diesem Namen'}">
     <div class="chart-area">
-      <ods-chart timescale="year">
+      <div class="hw-chart-area"><ods-chart timescale="year">
         <ods-chart-query context="datactx" field-x="datum" timescale="year">
           <ods-chart-serie expression-y="betriebe" function-y="SUM" chart-type="column"></ods-chart-serie>
         </ods-chart-query>
-      </ods-chart>
+      </ods-chart></div>
     </div>
   </ods-dataset-context>
 </div>
+<div class="hw-footer">Letzte Aktualisierung</div>
