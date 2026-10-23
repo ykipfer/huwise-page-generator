@@ -1,0 +1,4 @@
+.mine {
+  height: calc(var(--target-height) - 200px);
+  max-width: 1200px;
+}

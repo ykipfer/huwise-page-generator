@@ -1,0 +1,7 @@
+{
+  "note": "What the verifier reads about base-stylesheet.css. A test checks that the stylesheet defines every class listed here, so the two never drift apart.",
+  "rootClass": "hw-page",
+  "footerClass": "hw-footer",
+  "fixedHeightClasses": ["hw-map-area", "hw-chart-area", "hw-table-area"],
+  "maxFixedWidth": 375
+}

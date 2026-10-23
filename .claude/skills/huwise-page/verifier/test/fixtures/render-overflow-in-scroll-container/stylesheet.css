@@ -1,2 +1,2 @@
-.table-scroll { overflow-x: auto; }
-.cell { min-width: 1500px; }
+.hw-table-scroll { overflow-x: auto; }
+.hw-table-scroll .cell { min-width: 1500px; }

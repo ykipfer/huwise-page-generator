@@ -3,10 +3,12 @@
 //   markup (comments are ignored); its CSS check is a plain text search.
 // - the closed Widget list and the banned habits, read from ../references/ so that knowledge and lint
 //   never drift apart.
+// - the layout rules (layout-lint.mjs): footer, fixed-height parents, fixed widths.
 // - warnings (never fail a Page): attributes on a listed Widget that its family file does not document.
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseFragment } from 'parse5';
+import { lintLayout } from './layout-lint.mjs';
 
 const REFERENCES = path.join(import.meta.dirname, '..', 'references');
 const reference = file => JSON.parse(fs.readFileSync(path.join(REFERENCES, file), 'utf8'));
@@ -237,9 +239,8 @@ function sideEffects(html, doc, findings) {
   });
 }
 
-function lintHtml(html) {
+function lintHtml(html, doc) {
   const findings = [];
-  const doc = parseFragment(html, { sourceCodeLocationInfo: true });
   bannedInText(html, doc, findings);
   bannedRepeats(doc, findings);
   bannedTabs(doc, findings);
@@ -298,5 +299,6 @@ const unique = findings => [...new Map(findings.map(f =>
   [`${f.rule}@${f.location.file}:${f.location.line}:${f.location.column}`, f])).values()];
 
 export function lint({ html, css }) {
-  return unique([...lintHtml(html), ...lintCss(css)]);
+  const doc = parseFragment(html, { sourceCodeLocationInfo: true });
+  return unique([...lintHtml(html, doc), ...lintCss(css), ...lintLayout({ doc, css })]);
 }

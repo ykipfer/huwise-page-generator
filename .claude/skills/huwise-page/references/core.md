@@ -208,3 +208,9 @@ The verifier reports each habit as error `banned-<id>`. Its matchers live in `ba
 `hard-coded-year` treats any number from 1900 to 2099 in `*-parameters`, `-where` or `ng-init` as a year. A threshold such as `anzahl >= 2000` in `ods-adv-analysis-where` is reported too. Avoid such thresholds. If one is truly needed, report the false positive to the owner instead of working around the lint.
 
 Lint is the only check for platform-only CSS: the render harness loads the portal's `front-angular.css`, so `.ods-box` and the Bootstrap grid would look fine there.
+
+## Layout and style
+
+- Every Page starts from `base-stylesheet.css` (CI colours, font, cards, layout shapes, heights derived from `--target-height`) and a skeleton in `skeleton/<shape>/`. `rulebook.md` holds what CSS cannot enforce: chart colours, status colours, content rules.
+- Pattern files live in `patterns/`. Pattern 15 (`patterns/15-footer.md`) is mandatory on every Page.
+- Layout lint errors: `missing-footer` (no element with the footer class), `no-fixed-height` (an `ods-chart` or `ods-map` whose direct parent has no fixed height; use `hw-map-area`, `hw-chart-area` or `hw-table-area`), `fixed-width-too-wide` (a `width` or `min-width` above 375px outside `hw-table-scroll` and `hw-tabs`). The verifier reads the class names from `base-stylesheet.json` and `scroll-containers.json`.
