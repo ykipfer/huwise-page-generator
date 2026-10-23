@@ -84,7 +84,7 @@ Most data Widgets create a **child scope**. Their variable is visible only on th
 Consequences:
 
 - Nest what reads a variable **inside** the element that defines it: the `ods-select` goes inside the `ods-facet-results` that provides its options, and the KPI text goes inside the `ods-aggregation`.
-- Never assign to a plain scope variable to "export" a value. A write from inside a child scope creates a new variable in that child scope. The parent never sees it, and an `ng-repeat` over it elsewhere silently renders nothing. The render stage reports this as error `ng-repeat-out-of-scope` when the collection is `undefined` where the repeat sits (checked in every explored state). It cannot see a repeat that never reaches the DOM, nor an array that is merely empty (the empty variable is reported as `widget-variable`).
+- Never assign to a plain scope variable to "export" a value. A write from inside a child scope creates a new variable in that child scope. The parent never sees it, and an `ng-repeat` over it elsewhere silently renders nothing. The render stage reports this as error `ng-repeat-out-of-scope` when the collection is `undefined` where the repeat sits (checked in every explored state). It cannot see a repeat that never reaches the DOM, nor an array that is merely empty (the empty variable is reported as `widget-variable`, unless the Page guards it with an empty-state message, Pattern 14).
 - Pass state between places only through **context parameters**, which are shared objects. That is why both allowed side-effect forms write only into `ctx.parameters`.
 
 ## v1 parameters vs ODSQL
@@ -116,7 +116,7 @@ Pages mix two query dialects:
 - **Read the active filter value**, which may be a string or an array: `([].concat(datactx.parameters['refine.jahr']))[0]`.
 - **Cast keys and refine values to strings with `''+`:** `'refine.jahr': ''+jahre[0].name`, and `'refine.bfs_nummer': ''+record.fields.gemeindenummer` in a tooltip context. Integer and text keys (`gemeindenummer` vs `bfs_nummer`) only match as strings.
 - **Record fields:** `row.fields.name` for `ods-results` rows and `record.fields.name` in map-layer tooltips. `ods-adv-analysis` rows are flat: `rows[0].total`.
-- **Guard rendering:** use `ng-if="rows.length"` before reading `rows[0]`, and show an empty state with `ng-if="!rows || rows.length === 0"`.
+- **Guard rendering:** use `ng-if="rows.length"` before reading `rows[0]`, and show an empty state with `ng-if="!rows || rows.length === 0"` (Pattern 14). The render stage accepts a Widget variable that is empty when the Page tests it that way (`!x`, `!x.length`, `x.length === 0` in `ng-if`, `ng-show` or `ng-hide`); a guard on the non-empty case alone is not enough.
 - **Format numbers and dates:** `{{ total | number:0 }}` (de-ch thousands separator with `flg=de-ch`) and `{{ latest[0].datum | moment:'MMM YYYY' }}`.
 - AngularJS core directives (`ng-if`, `ng-show`, `ng-repeat`, `ng-class`, `ng-init` for constant lists) are allowed. Platform filters are not: `currentLanguage` is banned.
 
@@ -130,6 +130,12 @@ An assignment inside an interpolation, `{{ …; '' }}`, is a side effect. Exactl
 <span hidden>{{ datactx.parameters['refine.jahr'] = datactx.parameters['refine.jahr'] || latest[0].jahr; '' }}</span>
 ```
 
+For a parameter bound to an `ods-select`, test emptiness with `.length` and write an array. The select writes `[]` at start and when cleared, and `[]` is truthy, so the `||` form never restores the default; the select also fails on a scalar written after it linked (`select.js:413`). Pattern 3 uses this form:
+
+```html
+<span hidden>{{ datactx.parameters['refine.jahr'] = datactx.parameters['refine.jahr'].length ? datactx.parameters['refine.jahr'] : [(latest[0].datum | moment:'YYYY')]; '' }}</span>
+```
+
 **One-way copy.** It copies one filter to another context, renamed if needed.
 
 ```html
@@ -139,7 +145,7 @@ An assignment inside an interpolation, `{{ …; '' }}`, is a side effect. Exactl
 Rules the verifier enforces:
 
 - The target is `<ctx>.parameters['…']`, never a plain scope variable (scope rule) and never `$root`.
-- The guarded default reads the **same** parameter before `||`. The copy reads a parameter of a **different** context.
+- The guarded default reads the **same** parameter before `||`, or the same parameter's `.length` before `?`. The copy reads a parameter of a **different** context.
 - The interpolation sits in the text of a hidden element (`hidden`, or `style="display: none"`), never in an attribute.
 - Copies go one way. A copy back from the target context is an error, and so is copying one target parameter from two source contexts.
 - Only the guarded default's fallback (after `||`) may be any expression, e.g. `(latest[0].datum | moment:'YYYY')`. Some writes are deliberately **outside** the forms:
@@ -212,5 +218,5 @@ Lint is the only check for platform-only CSS: the render harness loads the porta
 ## Layout and style
 
 - Every Page starts from `base-stylesheet.css` (CI colours, font, cards, layout shapes, heights derived from `--target-height`) and a skeleton in `skeleton/<shape>/`. `rulebook.md` holds what CSS cannot enforce: chart colours, status colours, content rules.
-- Pattern files live in `patterns/`. Pattern 15 (`patterns/15-footer.md`) is mandatory on every Page.
+- Pattern files live in `patterns/`. Pattern 15 (`patterns/15-footer.md`) is mandatory on every Page. Filter Patterns: 1 dropdown from facet values (`01-dropdown-from-facet.md`), 2 dropdown from `group-by` (`02-dropdown-from-group-by.md`), 3 latest period, variants A and B (`03-latest-period.md`), 4 copy a filter to another context (`04-copy-filter.md`), 14 empty-state guard (`14-empty-state.md`). Each names its proven instance under `patterns/instances/`.
 - Layout lint errors: `missing-footer` (no element with the footer class), `no-fixed-height` (an `ods-chart` or `ods-map` whose direct parent has no fixed height; use `hw-map-area`, `hw-chart-area` or `hw-table-area`), `fixed-width-too-wide` (a `width` or `min-width` above 375px outside `hw-table-scroll` and `hw-tabs`). The verifier reads the class names from `base-stylesheet.json` and `scroll-containers.json`.

@@ -99,6 +99,18 @@ test('an empty Widget variable fails with exactly that finding', () => {
   assert.match(r.report.findings[0].message, /empty/);
 });
 
+test('an empty variable that the Page guards with an empty-state message passes', () => {
+  const r = run('render-empty-variable-guarded', ['--iterate']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.deepEqual(r.report.findings, []);
+});
+
+test('a guard that only handles the non-empty case does not excuse an empty variable', () => {
+  const r = run('render-empty-variable-positive-guard-only', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['widget-variable', 'error']]);
+});
+
 test('a chart without points fails with exactly that finding', () => {
   const r = run('render-chart-no-points', ['--iterate']);
   assert.equal(r.status, 1, r.stdout + r.stderr);

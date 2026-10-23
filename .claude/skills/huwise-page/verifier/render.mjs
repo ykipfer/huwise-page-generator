@@ -144,7 +144,7 @@ export function serve(harness, dist) {
 }
 
 // runs inside the iframe
-const inspectFrame = ({ allowed, chartIds, repeats }) => {
+const inspectFrame = ({ allowed, chartIds, repeats, guarded }) => {
   const label = el => el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
   const W = document.documentElement.clientWidth;
   // Content height: the lowest edge inside the Page plus the portal wrapper's bottom margin. The wrapper's
@@ -171,6 +171,8 @@ const inspectFrame = ({ allowed, chartIds, repeats }) => {
       let v;
       try { v = scope.$eval(name); } catch { v = undefined; }
       const where = `ods-${kind}="${attr.value}"`;
+      // a variable the Page tests for emptiness (an empty-state guard, Pattern 14) is expected to be empty sometimes
+      if (guarded.includes(name) && (v === undefined || v === null || (Array.isArray(v) && v.length === 0))) continue;
       if (v === undefined || v === null) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is unset` });
       else if (Array.isArray(v) && v.length === 0) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is empty` });
       else if (typeof v === 'number' && Number.isNaN(v)) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is NaN` });
@@ -256,6 +258,17 @@ async function settle(page, net, frame) {
 
 const INITIAL = 'initial';
 
+/** Names the Page tests for emptiness in ng-if / ng-show / ng-hide: `!x`, `!x.length`, `x.length === 0`. */
+export function emptyGuards(html) {
+  const names = new Set();
+  for (const m of html.matchAll(/\bng-(?:if|show|hide)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+    const expr = m[1] ?? m[2];
+    for (const n of expr.matchAll(/!\s*([A-Za-z_$][\w$]*)/g)) names.add(n[1]);
+    for (const n of expr.matchAll(/\b([A-Za-z_$][\w$]*)\.length\s*===?\s*0\b/g)) names.add(n[1]);
+  }
+  return [...names];
+}
+
 /** Renders the Page and explores its states; returns { findings, screenshots, states, platformConfig }.
  *  States are explored at every width: first the initial state, then each tab, author-written ng-click and
  *  ods-select option in document order, including the ones a state makes reachable. A state is cumulative
@@ -265,6 +278,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
   const marked = annotate(html);
   const entries = Object.entries(marked.elements);
   const clickIds = Object.fromEntries(entries.filter(([, e]) => e.click !== null).map(([id, e]) => [id, e.click]));
+  const guarded = emptyGuards(html);
   const chartIds = entries.filter(([, e]) => e.kind === 'ods-chart').map(([id]) => id);
   const server = await serve(harnessHtml(cfg, marked.html, css), findWidgetsDist());
   const browser = await chromium.launch();
@@ -300,7 +314,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
       // settles, re-checks every signal, screenshots; returns nothing, records into perWidth and states
       const check = async label => {
         const settled = await settle(page, net, frame);
-        const r = await frame.evaluate(inspectFrame, { allowed: scrollSelectors, chartIds, repeats: marked.repeats });
+        const r = await frame.evaluate(inspectFrame, { allowed: scrollSelectors, chartIds, repeats: marked.repeats, guarded });
         for (const id of r.present) seen.add(id);
         const state = states.get(label) ?? states.set(label, { label, index: states.size, rules: [] }).get(label);
         const shot = label === INITIAL ? `screenshot-${w}.png` : `state-${state.index}-${w}.png`;

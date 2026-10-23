@@ -122,6 +122,7 @@ const lintErrors = [
   ['side-effect-in-attribute', 'side-effect', 'index.html', 2],
   ['side-effect-two-way-copy', 'side-effect', 'index.html', 3],
   ['side-effect-two-sources', 'side-effect', 'index.html', 3],
+  ['side-effect-length-guard-other-parameter', 'side-effect', 'index.html', 2],
 ];
 for (const [fixture, rule, file, line] of lintErrors) {
   test(`${fixture}: exactly one ${rule} error at ${file}:${line}, exit 1`, () => {
@@ -139,6 +140,7 @@ const allowed = [
   ['allowed-year-like-numbers', 'year-like numbers in prose, limits and dataset IDs pass'],
   ['allowed-ng-click-toggle', 'a single ng-click toggle is not a hand-built tab bar and passes'],
   ['allowed-side-effect-guarded-default', 'the guarded default side-effect form passes'],
+  ['allowed-side-effect-guarded-default-length', 'the guarded default with a .length emptiness test passes'],
   ['allowed-side-effect-one-way-copy', 'the one-way copy side-effect form passes'],
 ];
 for (const [fixture, description] of allowed) {

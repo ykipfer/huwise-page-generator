@@ -195,8 +195,11 @@ function bannedTabs(doc, findings) {
 // Side-effect assignments {{ … ; '' }} are allowed in exactly two forms (core.md), both writing one
 // context parameter from inside a hidden element:
 //   guarded default  {{ a.parameters['p'] = a.parameters['p'] || <expr>; '' }}
+//                    {{ a.parameters['p'] = a.parameters['p'].length ? a.parameters['p'] : <expr>; '' }}
+//                    (the second tests emptiness with .length: ods-select writes [] when cleared, and [] is truthy)
 //   one-way copy     {{ b.parameters['q'] = a.parameters['p']; '' }}
 const GUARDED_DEFAULT = /^(\w+)\.parameters\[(['"])([^'"]+)\2\]\s*=\s*\1\.parameters\[(['"])\3\4\]\s*\|\|\s*([^;]+?)\s*;\s*(''|"")$/;
+const GUARDED_DEFAULT_LENGTH = /^(\w+)\.parameters\[(['"])([^'"]+)\2\]\s*=\s*\1\.parameters\[(['"])\3\4\]\.length\s*\?\s*\1\.parameters\[(['"])\3\5\]\s*:\s*([^;]+?)\s*;\s*(''|"")$/;
 const ONE_WAY_COPY = /^(\w+)\.parameters\[(['"])([^'"]+)\2\]\s*=\s*(\w+)\.parameters\[(['"])([^'"]+)\5\]\s*;\s*(''|"")$/;
 const withoutStrings = expr => expr.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, '""');
 const assigns = expr => /(^|[^=!<>])=(?![=>])/.test(withoutStrings(expr));
@@ -211,9 +214,9 @@ function sideEffects(html, doc, findings) {
   const copies = [];   // { target, source, loc }
   const check = (expr, loc, inHiddenText) => {
     if (!assigns(expr)) return;
-    const guarded = expr.match(GUARDED_DEFAULT);
+    const guarded = expr.match(GUARDED_DEFAULT) ?? expr.match(GUARDED_DEFAULT_LENGTH);
     const copy = expr.match(ONE_WAY_COPY);
-    if (!(guarded && !assigns(guarded[5])) && !(copy && copy[1] !== copy[4]))
+    if (!(guarded && !assigns(guarded[guarded.length - 2])) && !(copy && copy[1] !== copy[4]))
       return report(loc, `Side effect outside the two allowed forms (guarded default, one-way copy): {{ ${expr} }}`);
     if (!inHiddenText)
       return report(loc, `Side effect must sit in the text of a hidden element (hidden or style="display: none"): {{ ${expr} }}`);
