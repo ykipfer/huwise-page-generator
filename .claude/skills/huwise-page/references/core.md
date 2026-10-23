@@ -181,7 +181,7 @@ data.gr.ch serves **Highcharts 6.1.4** (2018), not the 11.1.0 that ods-widgets 2
 
 - Every `ods-map` carries `scroll-wheel-zoom="false"`, so the map never traps the reader's scrolling on the Host Page (`map.js:328`; lint rule `required-widget-attribute`).
 - Join data to boundaries by hand: `ods-color-gradient`, then `color-categories` + `color-by-field`. Never use the native join.
-- Boundaries come only from the Boundary Dataset catalogue on data.gr.ch.
+- Boundaries come only from the Boundary Dataset catalogue on data.gr.ch (`boundary-catalogue.md`). The dry-run checks that every data key has a shape.
 
 ## Banned habits
 
