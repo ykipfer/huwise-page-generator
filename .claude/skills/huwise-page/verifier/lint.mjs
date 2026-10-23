@@ -113,7 +113,7 @@ function bannedOnElement(el, findings) {
   return claimed;
 }
 
-function* elements(node) {
+export function* elements(node) {
   for (const child of node.childNodes ?? []) {
     if (child.tagName) yield child;
     yield* elements(child);
@@ -121,7 +121,7 @@ function* elements(node) {
   }
 }
 
-function* textNodes(node) {
+export function* textNodes(node) {
   for (const child of node.childNodes ?? []) {
     if (child.nodeName === '#text') yield child;
     yield* textNodes(child);

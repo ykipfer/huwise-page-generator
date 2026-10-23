@@ -15,21 +15,21 @@ const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-cache-'));
 function run(fixture, extraArgs = [], { cache = cacheDir } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-render-'));
   fs.cpSync(path.join(here, 'fixtures', fixture), dir, { recursive: true });
-  const args = ['--target-height', '800', '--embed-size', 'gross', ...extraArgs];
+  const args = ['--target-height', '800', '--embed-size', 'gross', '--no-dry-run', ...extraArgs];
   const r = spawnSync('node', [CLI, dir, ...args], { encoding: 'utf8', env: { ...process.env, VERIFIER_CACHE_DIR: cache } });
   const report = JSON.parse(fs.readFileSync(path.join(dir, 'verifier-output', 'report.json'), 'utf8'));
   return { ...r, dir, report };
 }
 const summary = report => report.findings.map(f => [f.rule, f.severity]);
-const shots = r => r.report.render.screenshots.map(s => s.width);
+const shots = r => r.report.stages.render.screenshots.map(s => s.width);
 
 test('clean Page passes at 375, 720 and 1200 with one screenshot per width (Gross)', () => {
   const r = run('render-clean');
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.deepEqual(r.report.findings, []);
-  assert.equal(r.report.render.status, 'pass');
+  assert.equal(r.report.stages.render.status, 'pass');
   assert.deepEqual(shots(r), [375, 720, 1200]);
-  for (const s of r.report.render.screenshots)
+  for (const s of r.report.stages.render.screenshots)
     assert.ok(fs.statSync(path.join(r.dir, 'verifier-output', s.file)).size > 0);
 });
 
@@ -47,7 +47,7 @@ test('--iterate renders at 1200 only', () => {
 
 test('platform config is cached for a day and refreshed after that', () => {
   const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-cache-'));
-  const source = () => run('render-clean', ['--iterate'], { cache }).report.render.platformConfig.source;
+  const source = () => run('render-clean', ['--iterate'], { cache }).report.stages.render.platformConfig.source;
   assert.equal(source(), 'live');
   assert.equal(source(), 'cache');
   const file = path.join(cache, 'platform.json');
@@ -59,8 +59,8 @@ test('platform config is cached for a day and refreshed after that', () => {
 test('render is skipped, and reported as skipped, when lint has errors', () => {
   const r = run('banned-ods-tabs');
   assert.equal(r.status, 1);
-  assert.equal(r.report.render.status, 'skipped');
-  assert.deepEqual(r.report.render.screenshots, []);
+  assert.equal(r.report.stages.render.status, 'skipped');
+  assert.deepEqual(r.report.stages.render.screenshots, []);
   assert.deepEqual(summary(r.report), [['banned-ods-tabs', 'error']]);
 });
 
@@ -76,7 +76,7 @@ for (const [fixture, rule, widths] of mustFail) {
     assert.equal(r.status, 1, r.stdout + r.stderr);
     assert.deepEqual(summary(r.report), [[rule, 'error']]);
     assert.deepEqual(r.report.findings[0].location.widths, widths);
-    assert.equal(r.report.render.status, 'fail');
+    assert.equal(r.report.stages.render.status, 'fail');
     assert.deepEqual(shots(r), [375, 720, 1200]);
   });
 }
