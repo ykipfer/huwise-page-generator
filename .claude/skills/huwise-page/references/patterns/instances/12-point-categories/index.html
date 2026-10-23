@@ -1,0 +1,41 @@
+<div class="hw-page hw-has-title">
+  <div class="hw-title">
+    <p class="hw-eyebrow">Amt für Wirtschaft und Tourismus</p>
+    <h1>Sportanlagen von nationaler und kantonaler Bedeutung</h1>
+  </div>
+  <ods-dataset-context context="datactx"
+      datactx-dataset="dvs_awt_educ_20251002"
+      datactx-parameters="{'disjunctive.sportart': true}">
+    <div class="hw-body hw-shape-single">
+      <div class="hw-top">
+        <div class="hw-kpis">
+          <div class="hw-kpi" ods-aggregation="total" ods-aggregation-context="datactx" ods-aggregation-function="COUNT">
+            <p class="hw-kpi-value">{{ total | number:0 }}</p><p class="hw-kpi-label">Anlagen</p>
+          </div>
+        </div>
+        <div class="hw-filters">
+          <div class="hw-filter" ods-facet-results="sportarten" ods-facet-results-context="datactx" ods-facet-results-facet-name="sportart" ods-facet-results-sort="alphanum">
+            <p class="hw-filter-label">Sportart</p>
+            <ods-select options="sportarten" label-modifier="name" value-modifier="name" selected-values="datactx.parameters['refine.sportart']" placeholder="Alle Sportarten"></ods-select>
+          </div>
+        </div>
+      </div>
+      <div class="hw-card">
+        <p class="hw-card-title">Anlagen nach Bedeutung</p>
+        <div class="hw-map-area">
+          <ods-map location="8,46.75,9.6" scroll-wheel-zoom="false" toolbar-geolocation="false" toolbar-drawing="false">
+            <ods-map-layer context="datactx" display="categories"
+                color-by-field="anlagetyp"
+                color-categories="{'NASAK': '#2D2D8A', 'NASAK/KASAK (kantonale Bedeutung)': '#E69F00', 'KASAK (kantonale Bedeutung)': '#009E73', 'KASAK (regionale Bedeutung)': '#56B4E9'}"
+                color-categories-other="#6B6B6B"
+                size="6" caption="true" caption-title="Bedeutung" tooltip-disabled="true"></ods-map-layer>
+          </ods-map>
+        </div>
+      </div>
+    </div>
+    <div class="hw-footer">
+      <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+      <a href="https://data.gr.ch/explore/dataset/dvs_awt_educ_20251002/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+    </div>
+  </ods-dataset-context>
+</div>
