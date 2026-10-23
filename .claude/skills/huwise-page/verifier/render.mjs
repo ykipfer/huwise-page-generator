@@ -144,13 +144,24 @@ export function serve(harness, dist) {
 }
 
 // runs inside the iframe
-const inspectFrame = ({ allowed, chartIds, repeats, guarded }) => {
+const inspectFrame = ({ allowed, chartIds, mapIds, repeats, guarded }) => {
   const label = el => el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
   const W = document.documentElement.clientWidth;
   // Content height: the lowest edge inside the Page plus the portal wrapper's bottom margin. The wrapper's
   // own min-height is a harness artefact (the real iframe body has no fixed height), so scrollHeight is not used.
   const main = document.querySelector('main');
-  const bottoms = [...document.querySelectorAll('.page-layout, .page-layout *')].map(el => el.getBoundingClientRect().bottom + window.scrollY);
+  // An element's bottom counts only where it is visible: content clipped by a scrolling or hidden-overflow
+  // ancestor (a table inside hw-table-scroll) adds no height to the Page.
+  const visibleBottom = el => {
+    let bottom = el.getBoundingClientRect().bottom;
+    for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+      const o = getComputedStyle(a);
+      if (o.display !== 'contents' && o.overflowY !== 'visible') bottom = Math.min(bottom, a.getBoundingClientRect().bottom);
+    }
+    return bottom + window.scrollY;
+  };
+  // Map tiles and panes extend beyond the map's own box and are clipped by it: only the container counts.
+  const bottoms = [...document.querySelectorAll('.page-layout, .page-layout *')].filter(el => !el.parentElement?.closest('.leaflet-container')).map(visibleBottom);
   const out = { text: [], signals: [], present: [], overflow: 0, offenders: [], height: Math.ceil(Math.max(0, ...bottoms) + (main ? parseFloat(getComputedStyle(main).marginBottom) || 0 : 0)) };
   const txt = document.body.innerText;
   if (txt.includes('{{')) out.text.push('{{');
@@ -186,6 +197,23 @@ const inspectFrame = ({ allowed, chartIds, repeats, guarded }) => {
         out.signals.push({ rule: 'chart-no-points', message: 'A chart is drawn without points' });
     }
   }
+  // a map that shows no features, or is under the 280px minimum
+  const MAP_MIN = 280;
+  const hasFeatures = map => {
+    if (map.querySelector('.leaflet-overlay-pane path, .leaflet-marker-pane > *, .leaflet-shadow-pane > *')) return true;
+    return [...map.querySelectorAll('.leaflet-overlay-pane canvas, canvas.leaflet-heatmap-layer')].some(c => {
+      try { return c.width > 0 && c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 3 && v > 0); } catch { return true; }
+    });
+  };
+  for (const id of mapIds) {
+    for (const el of document.querySelectorAll(`[data-verify-id="${id}"]`)) {
+      const map = el.querySelector('.leaflet-container');
+      if (!map) { out.signals.push({ rule: 'map-no-features', message: 'A map was not drawn (no Leaflet container)' }); continue; }
+      if (!hasFeatures(map)) out.signals.push({ rule: 'map-no-features', message: 'A map shows no features' });
+      const h = Math.round(map.getBoundingClientRect().height);
+      if (h < MAP_MIN) out.signals.push({ rule: 'map-too-small', message: `A map is ${h}px high; the minimum is ${MAP_MIN}px` });
+    }
+  }
   // ng-repeat over a variable that is undefined where the repeat sits (typically a Widget's variable used
   // outside the element that owns it): it renders nothing, silently.
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT);
@@ -213,7 +241,7 @@ const inspectFrame = ({ allowed, chartIds, repeats, guarded }) => {
 // runs inside the iframe: every interaction that can change the Page's state, in document order.
 // Author-written ng-click only (Widget templates carry their own), ods-simple-tabs tabs, and the
 // options of every ods-select. Selecting an option clicks its list item; the dropdown need not be open.
-const listActions = ({ clickIds, optionCap }) => {
+const listActions = ({ clickIds, optionCap, tooltip }) => {
   const found = [];
   const capped = [];
   const text = el => el.innerText.trim().replace(/\s+/g, ' ');
@@ -238,11 +266,23 @@ const listActions = ({ clickIds, optionCap }) => {
       found.push({ el: li, key: `select:${s}:${label}`, label: `ods-select option "${label}"` });
     });
   });
+  // A map layer with a tooltip template: click the first shape or marker of each map to render the tooltip.
+  if (tooltip) document.querySelectorAll('.leaflet-container').forEach((map, m) => {
+    const el = map.querySelector('.leaflet-overlay-pane path.leaflet-clickable, .leaflet-marker-pane .leaflet-marker-icon');
+    if (el) found.push({ el, key: `map:${m}`, label: m === 0 ? 'map shape click' : `map shape click (map ${m + 1})` });
+  });
   found.sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
   window.__verifyActions = Object.fromEntries(found.map(f => [f.key, f.el]));
   return { actions: found.map(({ key, label, active }) => ({ key, label, active: !!active })), capped };
 };
-const performAction = key => window.__verifyActions[key]?.click();
+const performAction = key => {
+  const el = window.__verifyActions[key];
+  if (!el) return;
+  if (key.startsWith('map:')) { // Leaflet reads the pointer position from the event
+    const r = el.getBoundingClientRect();
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+  } else el.click();
+};
 
 async function settle(page, net, frame) {
   const t0 = Date.now();
@@ -280,6 +320,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
   const clickIds = Object.fromEntries(entries.filter(([, e]) => e.click !== null).map(([id, e]) => [id, e.click]));
   const guarded = emptyGuards(html);
   const chartIds = entries.filter(([, e]) => e.kind === 'ods-chart').map(([id]) => id);
+  const mapIds = entries.filter(([, e]) => e.kind === 'ods-map').map(([id]) => id);
   const server = await serve(harnessHtml(cfg, marked.html, css), findWidgetsDist());
   const browser = await chromium.launch();
   const perWidth = [];
@@ -314,7 +355,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
       // settles, re-checks every signal, screenshots; returns nothing, records into perWidth and states
       const check = async label => {
         const settled = await settle(page, net, frame);
-        const r = await frame.evaluate(inspectFrame, { allowed: scrollSelectors, chartIds, repeats: marked.repeats, guarded });
+        const r = await frame.evaluate(inspectFrame, { allowed: scrollSelectors, chartIds, mapIds, repeats: marked.repeats, guarded });
         for (const id of r.present) seen.add(id);
         const state = states.get(label) ?? states.set(label, { label, index: states.size, rules: [] }).get(label);
         const shot = label === INITIAL ? `screenshot-${w}.png` : `state-${state.index}-${w}.png`;
@@ -338,7 +379,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
       await check(INITIAL);
       const visited = new Set();
       for (;;) {
-        const { actions, capped } = await frame.evaluate(listActions, { clickIds, optionCap: OPTION_CAP });
+        const { actions, capped } = await frame.evaluate(listActions, { clickIds, optionCap: OPTION_CAP, tooltip: entries.some(([, e]) => e.tooltip) });
         for (const a of actions) if (a.active) visited.add(a.key); // the initial state already shows the active tab
         for (const c of capped)
           perWidth.push({ w, state: INITIAL, issue: { rule: 'select-options-capped', warning: true, message: `ods-select number ${c.select + 1} has ${c.total} options; only the first ${OPTION_CAP} are explored as states` } });

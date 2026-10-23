@@ -1,0 +1,3 @@
+/* Pattern 7: ten columns need more room than 375px. The wrapper sits inside hw-table-scroll, the only place a
+   min-width above 375px is allowed, so the table scrolls sideways there instead of squeezing its headers. */
+.hw-page .hw-table-wide { min-width: 720px; height: 100%; }

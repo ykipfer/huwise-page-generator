@@ -1,0 +1,52 @@
+<div class="hw-page hw-has-title">
+  <div class="hw-title">
+    <p class="hw-eyebrow">Amt für Wirtschaft und Tourismus</p>
+    <h1>Zweitwohnungsanteil</h1>
+  </div>
+  <ods-dataset-context context="stampctx" stampctx-dataset="dvs_awt_soci_20260112">
+    <div ods-adv-analysis="latest" ods-adv-analysis-context="stampctx"
+         ods-adv-analysis-select="jahr, semester" ods-adv-analysis-group-by="jahr, semester"
+         ods-adv-analysis-order-by="jahr DESC, semester DESC" ods-adv-analysis-limit="1">
+      <ods-dataset-context ng-if="latest.length" context="datactx, geoctx"
+          datactx-dataset="dvs_awt_soci_20260112"
+          datactx-parameters="{'refine.jahr': ''+(latest[0].jahr | moment:'YYYY'), 'refine.semester': ''+latest[0].semester}"
+          geoctx-dataset="dvs_awt_regi_202502110">
+        <div class="hw-body hw-shape-single">
+          <div class="hw-gradient" ods-color-gradient="gradient"
+               ods-color-gradient-context="datactx"
+               ods-color-gradient-x="bfs_nummer"
+               ods-color-gradient-serie="AVG(zwg_3120)"
+               ods-color-gradient-low="#E7E7F2"
+               ods-color-gradient-high="#2D2D8A"
+               ods-color-gradient-pow-exponent="1">
+            <div class="hw-top">
+              <div class="hw-kpis">
+                <div class="hw-kpi"><p class="hw-kpi-value">{{ gradient.range.max | number:0 }}%</p><p class="hw-kpi-label">Höchster Gemeindewert</p></div>
+                <div class="hw-kpi"><p class="hw-kpi-value">{{ gradient.range.min | number:0 }}%</p><p class="hw-kpi-label">Tiefster Gemeindewert</p></div>
+              </div>
+              <div class="hw-filters"></div>
+            </div>
+            <div class="hw-card">
+              <p class="hw-card-title">Anteil Zweitwohnungen nach Gemeinde, {{ latest[0].semester }} {{ latest[0].jahr | moment:'YYYY' }}</p>
+              <div class="hw-map-area">
+                <ods-map location="8,46.75,9.6" scroll-wheel-zoom="false" toolbar-geolocation="false" toolbar-drawing="false" display-legend="false">
+                  <ods-map-layer context="geoctx" display="categories"
+                      color-categories="gradient['colors']" color-by-field="bfs_nummer"
+                      color-categories-other="#D9D9D6"
+                      border-color="#FFFFFF" shape-opacity="1" tooltip-disabled="true"></ods-map-layer>
+                </ods-map>
+                <div class="hw-map-legend">
+                  <ods-legend color-gradient="gradient" title="Anteil in %" no-value-color="#D9D9D6" decimal-precision="0"></ods-legend>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hw-footer">
+          <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+          <a href="https://data.gr.ch/explore/dataset/dvs_awt_soci_20260112/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+        </div>
+      </ods-dataset-context>
+    </div>
+  </ods-dataset-context>
+</div>

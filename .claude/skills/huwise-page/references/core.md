@@ -188,6 +188,9 @@ data.gr.ch serves **Highcharts 6.1.4** (2018), not the 11.1.0 that ods-widgets 2
 - Every `ods-map` carries `scroll-wheel-zoom="false"`, so the map never traps the reader's scrolling on the Host Page (`map.js:328`; lint rule `required-widget-attribute`).
 - Join data to boundaries by hand: `ods-color-gradient`, then `color-categories` + `color-by-field`. Never use the native join.
 - Boundaries come only from the Boundary Dataset catalogue on data.gr.ch (`boundary-catalogue.md`). The dry-run checks that every data key has a shape.
+- Map Patterns: 9 choropleth, 10 tooltip from a nested context, 11 tooltip from the layer's own record, 12 point map with category colours, 13 boundary outlines (`patterns/09-…` to `13-…`, proven instance Pages in `patterns/instances/`).
+- A tooltip (the content of `ods-map-layer`) sees only `record` and the contexts declared inside it, never the Page's scope.
+- Render signals (errors): `map-no-features` (nothing drawn) and `map-too-small` (under 280px). The render stage also clicks the first shape or marker of every map that has a tooltip template (state "map shape click") and checks the tooltip's Widgets there. A map in `ods-simple-tabs` keeps the default rebuild behaviour and is checked once its tab is explored.
 
 ## Banned habits
 
@@ -218,5 +221,6 @@ Lint is the only check for platform-only CSS: the render harness loads the porta
 ## Layout and style
 
 - Every Page starts from `base-stylesheet.css` (CI colours, font, cards, layout shapes, heights derived from `--target-height`) and a skeleton in `skeleton/<shape>/`. `rulebook.md` holds what CSS cannot enforce: chart colours, status colours, content rules.
-- Pattern files live in `patterns/`. Pattern 15 (`patterns/15-footer.md`) is mandatory on every Page. Filter Patterns: 1 dropdown from facet values (`01-dropdown-from-facet.md`), 2 dropdown from `group-by` (`02-dropdown-from-group-by.md`), 3 latest period, variants A and B (`03-latest-period.md`), 4 copy a filter to another context (`04-copy-filter.md`), 14 empty-state guard (`14-empty-state.md`). Each names its proven instance under `patterns/instances/`.
+- Pattern files live in `patterns/`. Pattern 15 (`patterns/15-footer.md`) is mandatory on every Page. Patterns 5 to 8 (`05-kpi.md`, `06-chart.md`, `07-table.md`, `08-tabs.md`) each have a verified instance Page in `patterns/instances/<pattern>/`.
+- Filter Patterns: 1 dropdown from facet values (`01-dropdown-from-facet.md`), 2 dropdown from `group-by` (`02-dropdown-from-group-by.md`), 3 latest period, variants A and B (`03-latest-period.md`), 4 copy a filter to another context (`04-copy-filter.md`), 14 empty-state guard (`14-empty-state.md`). Each names its proven instance under `patterns/instances/`.
 - Layout lint errors: `missing-footer` (no element with the footer class), `no-fixed-height` (an `ods-chart` or `ods-map` whose direct parent has no fixed height; use `hw-map-area`, `hw-chart-area` or `hw-table-area`), `fixed-width-too-wide` (a `width` or `min-width` above 375px outside `hw-table-scroll` and `hw-tabs`). The verifier reads the class names from `base-stylesheet.json` and `scroll-containers.json`.

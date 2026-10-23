@@ -201,6 +201,19 @@ test('a colour map that exactly matches the facet values passes and the report c
   assert.match(fs.readFileSync(path.join(r.dir, 'verifier-output', 'report.md'), 'utf8'), /API requests: 2/);
 });
 
+test('a colour map is checked against the values left by the context\'s literal default filters', () => {
+  const r = run('dryrun-colour-map-filtered', DRY_RUN_ARGS);
+  assert.deepEqual(r.report.findings, []);
+  assert.equal(r.status, 0);
+});
+
+test('a colour map key that the context\'s literal filter excludes is reported as not in the data', () => {
+  const r = run('dryrun-colour-map-filtered-extra-key', DRY_RUN_ARGS);
+  assert.equal(r.status, 1);
+  assert.deepEqual(summary(r.report).map(f => f[0]), ['dry-run-colour-map-mismatch']);
+  assert.match(r.report.findings[0].message, /Not in the data: Italien/);
+});
+
 test('existing fields in parameters, filters and row expressions pass; one literal query costs one request', () => {
   const r = run('dryrun-valid-fields-and-query', DRY_RUN_ARGS);
   assert.deepEqual(r.report.findings, []);

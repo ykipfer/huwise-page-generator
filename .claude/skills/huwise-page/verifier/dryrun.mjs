@@ -6,7 +6,7 @@
 //   facet names, refine./exclude./disjunctive./sort in parameters and filter bindings, .fields.* reads;
 // - every literal ods-adv-analysis ODSQL query runs and returns rows;
 // - every literal value-to-colour map (category-colors, color-categories) uses exactly the real facet
-//   values of its field. Missing or extra keys silently fall back to the default palette.
+//   values of its field, within the context's literal default refine/exclude filters. Missing or extra keys silently fall back to the default palette.
 //
 // It talks to the public Explore API v2.1. Inside Claude Code the same facts are available through the
 // data.gr.ch MCP (the skill uses it while planning); a Node script cannot call MCP tools, so the CLI
@@ -328,6 +328,9 @@ export async function dryRun({ html, fetchJson = defaultFetchJson }) {
       const d = known(m.ctx);
       if (!d || missing.has(`${m.ctx}:${m.field}`) || !d.names.has(m.field)) continue;
       const qs = new URLSearchParams({ select: m.field, group_by: m.field, limit: String(FACET_CAP) });
+      // Values the reader can see: the context's literal default filters narrow the field (a "top 7" chart).
+      const where = whereClause(d.filters, d.types, new Set());
+      if (where) qs.set('where', where);
       const { status, body } = await get(`/catalog/datasets/${encodeURIComponent(d.id)}/records?${qs}`);
       if (status !== 200) {
         findings.push(finding('dry-run-query-failed', m.loc, `Facet values of "${m.field}" could not be read (HTTP ${status}). ${body?.message ?? ''}`.trim()));
