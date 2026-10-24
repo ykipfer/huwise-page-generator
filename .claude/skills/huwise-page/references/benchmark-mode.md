@@ -43,4 +43,14 @@ A request passes when the verifier reports **no errors within 3 iterations** AND
 2. Show the table to the owner. The owner confirms or overrides **all scores in one pass**: `node benchmark.mjs confirm <run-dir> [--override <slug>.<criterion>=<0|1|2>:<reason>]…`. An override replaces that score, keeps the agent's original in the result, and pass or fail is recomputed.
 3. Run `report` again so `results.md` reflects the confirmed scores.
 
-The run folder stays on disk, gitignored. Comparing a run with the Baseline belongs to the Baseline ticket, not to this mode.
+The run folder stays on disk, gitignored.
+
+## Baseline and regressions
+
+The **Baseline** is the tracked file `benchmark/baseline.json`: one row per request (pass or fail, iterations, warnings, the three rubric scores and total, and the field list of the request's datasets) from the last full run the owner accepted. Tool: `verifier/baseline.mjs`, run from `verifier/`. The schemas of the datasets are fetched live from the Explore API unless you pass `--schemas <file>` (`node baseline.mjs schemas` prints them).
+
+- **Setting it.** Only a full run (all six requests recorded) whose scores the owner has confirmed can become the Baseline. The owner confirms: show the full run, and run `node baseline.mjs accept <run-dir>` only after the owner says the run is accepted. The first accepted v1 run sets it. A subset run can never set or replace it.
+- **Comparing.** `node baseline.mjs compare <run-dir>` compares every recorded request with its Baseline row and writes `comparison.md` and `comparison.json` into the run folder. A subset run is compared the same way; the Baseline file is only read. A request is **worse** when it goes from pass to fail, its rubric total drops, or it needs more iterations (warnings alone are not worse).
+- **Re-run once.** A worse request is shown as `needs-rerun`. Re-run it exactly once (`benchmark.mjs init <slug>`, build, verify, record, owner confirms), then `node baseline.mjs compare <run-dir> --rerun <rerun-run-dir>`. It is a **regression** only if the re-run is worse again; if not, it is reported as not reproduced. Both runs are recorded in `comparison.json`. A second re-run of the same request is refused.
+- **Dataset changed.** A request whose dataset was removed, renamed or replaced, or lost a field or changed a field's type since the Baseline, is reported as **dataset changed**, separately from regressions. Propose a replacement from the data.gr.ch catalogue (`--proposals <file>`: `{ "<slug>": { "dataset": "<id>", "note": ".." } }`). Added fields are not a change.
+- **Accepting a replacement.** When the owner accepts it, update the request file (dataset ID, field names, checklist), run that request, have the owner confirm it, then `node baseline.mjs reset <run-dir> <slug> --note "<why>"`. That one row is reset to the new run's result with the note; the other rows stay.
