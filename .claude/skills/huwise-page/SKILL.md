@@ -25,6 +25,8 @@ Ask for nothing else. If the dataset ID or prompt is missing, ask for it.
 6. **Verify**: `node verifier/verify.mjs pages/<slug> --target-height <N> --embed-size <size> --iterate` while iterating (lint, dry-run, render at 1200px), then the same without `--iterate` for the final pass at every width. Review the 375px shot and each state at 1200px against the CI Rules and the Page Request. At most 3 fix iterations; then stop and show the report. About 30 API requests per full run.
 7. **Handoff**: `node verifier/handoff.mjs pages/<slug> --dataset-title "<title>" --caption "<Legende>" --iterations <n>` writes `pages/<slug>/handoff.md` (editor steps, embed URL, gr.ch component values, verification summary, screenshots); repeat it in chat with the 375px and 1200px screenshots. A Page still failing after 3 iterations gets the same file marked "not passing".
 
+**Refinement**: a change after handoff edits `pages/<slug>/` in place and re-runs steps 6 and 7 in full with a fresh 3-iteration cap, even for a CSS tweak; a change to the plan (a new Visualization, another shape) goes back through steps 2 to 4 and the owner's ok first. See the Refinement section of `references/build-verify-handoff.md`.
+
 Always read `references/core.md` and `references/rulebook.md` before writing a Page. Never commit; the owner decides what goes into history. The Page folder's `index.html`, `stylesheet.css` and `handoff.md` are tracked, `preview.html` and `verifier-output/` are ignored.
 
 ## Widget index

@@ -70,4 +70,18 @@ The Page folder's `index.html`, `stylesheet.css` and `handoff.md` are tracked; `
 
 ## Refinement
 
-Edit the Page folder in place. Every refinement re-runs the full staged check with a **fresh 3-iteration cap**, even a CSS tweak, and rewrites the handoff. A refinement that changes the plan (a new Visualization, another shape) goes back through the Page Sketch gate first (`page-sketch.md`).
+The owner asks for a change after the handoff, in the same session. The Page folder `pages/<slug>/` is **edited in place**: same slug, same files, no copy, no second folder. Decide first which of the two kinds it is.
+
+**Same plan (CSS-only, label, colour, spacing, a filter default, a different field of the same Visualization).** Edit `index.html` and/or `stylesheet.css` in place, then:
+
+1. Re-run the **full staged check**: lint, dry-run, render, screenshot review, exactly as in step 6. The check re-runs every stage, even for a CSS-only change: a CSS tweak can overflow the Target Height, hide a chart or break the 375px shot. There is no shortcut run and no "only lint".
+2. The **fresh 3-iteration cap** applies: the first run after the edit is iteration 1 again, with at most 3 fix iterations, whatever the earlier build or earlier refinements used. The count in the handoff is this refinement's count.
+3. **Rewrite the handoff** with `handoff.mjs` (step 7), using the new iteration count, and repeat it in chat with the new 375px and 1200px screenshots. The old `handoff.md` is overwritten, never edited by hand. Run `git status --short pages/<slug>` as the last check (the generator still never commits).
+
+**Plan changes (a new Visualization, a removed one, another shape, a new filter or KPI row, a Companion Dataset or a map).** Nothing is built before the owner approves the new plan:
+
+1. Go back to the Page Sketch gate (`page-sketch.md`): edit the sketch markup in `pages/<slug>/` in place, re-run lint (`--no-dry-run --skip-render`) and `preview.mjs`, which regenerates `preview.html` and opens it, and post the **changed plan list** with its flags.
+2. Wait for the owner's explicit **ok** (or "freigegeben"). Until then do not swap in Widgets, run the dry-run or render, or touch the handoff. Change requests regenerate the sketch again.
+3. After the ok, build (step 5), verify (step 6, **fresh cap**, iteration 1) and hand off (step 7) as for a new Page.
+
+If it is unclear which kind a request is, treat it as a plan change: a gate costs a minute, a wrong build costs a verifier run.
