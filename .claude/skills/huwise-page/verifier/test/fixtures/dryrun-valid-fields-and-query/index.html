@@ -1,0 +1,6 @@
+<ods-dataset-context context="datactx" datactx-dataset="dvs_awt_econ_20250203" datactx-parameters="{'disjunctive.gemeinde_name': true, 'sort': '-datum'}">
+  <ods-select selected-values="datactx.parameters['refine.gemeinde_name']"></ods-select>
+  <div ods-results="rows" ods-results-context="datactx" ods-results-max="3"><p ng-repeat="row in rows">{{ row.fields.gemeinde_name }}</p></div>
+  <div ods-adv-analysis="rows2" ods-adv-analysis-context="datactx" ods-adv-analysis-select="max(betriebe) as m"></div>
+</ods-dataset-context>
+<div class="hw-footer">Letzte Aktualisierung</div>

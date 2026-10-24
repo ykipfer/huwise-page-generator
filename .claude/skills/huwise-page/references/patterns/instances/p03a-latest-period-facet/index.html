@@ -1,0 +1,45 @@
+<ods-dataset-context context="yearctx" yearctx-dataset="dvs_awt_econ_20250203">
+  <div ods-facet-results="jahre" ods-facet-results-context="yearctx"
+       ods-facet-results-facet-name="jahr" ods-facet-results-sort="-num">
+    <ods-dataset-context ng-if="jahre.length" context="datactx"
+        datactx-dataset="dvs_awt_econ_20250203"
+        datactx-parameters="{'refine.jahr': ''+jahre[0].name}">
+      <div class="hw-page">
+        <div class="hw-body hw-shape-single">
+          <div class="hw-top">
+            <div class="hw-kpis">
+              <div class="hw-kpi" ods-aggregation="logis" ods-aggregation-context="datactx"
+                   ods-aggregation-function="SUM" ods-aggregation-expression="logiernachte">
+                <p class="hw-kpi-value">{{ logis | number:0 }}</p>
+                <p class="hw-kpi-label">Logiernächte</p>
+              </div>
+            </div>
+            <div class="hw-filters">
+              <div class="hw-filter">
+                <p class="hw-filter-label">Jahr</p>
+                <span hidden>{{ datactx.parameters['refine.jahr'] = datactx.parameters['refine.jahr'].length ? datactx.parameters['refine.jahr'] : [''+jahre[0].name]; '' }}</span>
+                <ods-select options="jahre" selected-values="datactx.parameters['refine.jahr']"
+                    label-modifier="name" value-modifier="name"
+                    placeholder="Jahr wählen"></ods-select>
+              </div>
+            </div>
+          </div>
+          <div class="hw-card">
+            <p class="hw-card-title">Logiernächte pro Monat</p>
+            <div class="hw-chart-area">
+              <ods-chart timescale="month">
+                <ods-chart-query context="datactx" field-x="datum" timescale="month" maxpoints="0">
+                  <ods-chart-serie chart-type="column" function-y="SUM" expression-y="logiernachte" label-y="Logiernächte" color="#2D2D8A"></ods-chart-serie>
+                </ods-chart-query>
+              </ods-chart>
+            </div>
+          </div>
+        </div>
+        <div class="hw-footer">
+          <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+          <a href="https://data.gr.ch/explore/dataset/dvs_awt_econ_20250203/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+        </div>
+      </div>
+    </ods-dataset-context>
+  </div>
+</ods-dataset-context>

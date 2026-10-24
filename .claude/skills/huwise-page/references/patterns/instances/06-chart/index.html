@@ -1,0 +1,32 @@
+<div class="hw-page">
+  <ods-dataset-context context="datactx"
+      datactx-dataset="dvs_kiga_econ_20260128"
+      datactx-parameters="{'disjunctive.metrik': true, 'refine.metrik': ['Registrierte Arbeitslose', 'Nicht arbeitslose Stellensuchende']}">
+    <div class="hw-body hw-shape-single">
+      <div class="hw-top">
+        <div class="hw-kpis">
+          <div class="hw-kpi" ods-aggregation="kpi_value" ods-aggregation-context="datactx" ods-aggregation-function="MAX" ods-aggregation-expression="jahr">
+            <p class="hw-kpi-value">{{ kpi_value }}</p>
+            <p class="hw-kpi-label">Neuestes Jahr in den Daten</p>
+          </div>
+        </div>
+        <div class="hw-filters"></div>
+      </div>
+      <div class="hw-card">
+        <p class="hw-card-title">Stellensuchende pro Jahr</p>
+        <div class="hw-chart-area">
+          <ods-chart timescale="year">
+            <ods-chart-query context="datactx" field-x="datum" timescale="year" stacked="normal" series-breakdown="metrik"
+                category-colors="{'Registrierte Arbeitslose': '#2D2D8A', 'Nicht arbeitslose Stellensuchende': '#E69F00'}">
+              <ods-chart-serie expression-y="wert" function-y="AVG" chart-type="column" label-y="Personen"></ods-chart-serie>
+            </ods-chart-query>
+          </ods-chart>
+        </div>
+      </div>
+    </div>
+    <div class="hw-footer">
+      <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+      <a href="https://data.gr.ch/explore/dataset/dvs_kiga_econ_20260128/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+    </div>
+  </ods-dataset-context>
+</div>

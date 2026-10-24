@@ -1,8 +1,16 @@
 # files
 ods-widgets/
 page_examples/
+# Page Sketch output: only the generated preview wrapper is ignored. The sketch markup itself is the Page
+# folder's index.html and stylesheet.css, which the build edits in place, so those stay tracked (story 88).
+pages/*/preview.html
 # verifier output (reports, screenshots) inside Page folders
 verifier-output/
 # verifier dependencies and agent worktrees
 node_modules/
 .claude/worktrees/
+# scraped platform config cache of the render stage
+.claude/skills/huwise-page/verifier/.cache/
+
+# benchmark run folders (dated runs of /huwise-page benchmark)
+.claude/skills/huwise-page/benchmark/runs/

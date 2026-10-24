@@ -84,7 +84,7 @@ Most data Widgets create a **child scope**. Their variable is visible only on th
 Consequences:
 
 - Nest what reads a variable **inside** the element that defines it: the `ods-select` goes inside the `ods-facet-results` that provides its options, and the KPI text goes inside the `ods-aggregation`.
-- Never assign to a plain scope variable to "export" a value. A write from inside a child scope creates a new variable in that child scope. The parent never sees it, and an `ng-repeat` over it elsewhere silently renders nothing.
+- Never assign to a plain scope variable to "export" a value. A write from inside a child scope creates a new variable in that child scope. The parent never sees it, and an `ng-repeat` over it elsewhere silently renders nothing. The render stage reports this as error `ng-repeat-out-of-scope` when the collection is `undefined` where the repeat sits (checked in every explored state). It cannot see a repeat that never reaches the DOM, nor an array that is merely empty (the empty variable is reported as `widget-variable`, unless the Page guards it with an empty-state message, Pattern 14).
 - Pass state between places only through **context parameters**, which are shared objects. That is why both allowed side-effect forms write only into `ctx.parameters`.
 
 ## v1 parameters vs ODSQL
@@ -116,7 +116,7 @@ Pages mix two query dialects:
 - **Read the active filter value**, which may be a string or an array: `([].concat(datactx.parameters['refine.jahr']))[0]`.
 - **Cast keys and refine values to strings with `''+`:** `'refine.jahr': ''+jahre[0].name`, and `'refine.bfs_nummer': ''+record.fields.gemeindenummer` in a tooltip context. Integer and text keys (`gemeindenummer` vs `bfs_nummer`) only match as strings.
 - **Record fields:** `row.fields.name` for `ods-results` rows and `record.fields.name` in map-layer tooltips. `ods-adv-analysis` rows are flat: `rows[0].total`.
-- **Guard rendering:** use `ng-if="rows.length"` before reading `rows[0]`, and show an empty state with `ng-if="!rows || rows.length === 0"`.
+- **Guard rendering:** use `ng-if="rows.length"` before reading `rows[0]`, and show an empty state with `ng-if="!rows || rows.length === 0"` (Pattern 14). The render stage accepts a Widget variable that is empty when the Page tests it that way (`!x`, `!x.length`, `x.length === 0` in `ng-if`, `ng-show` or `ng-hide`); a guard on the non-empty case alone is not enough. The excused empty variable is not silent: the render stage reports the **warning** `widget-variable-guarded` (one per excused variable, naming it), so the Page's author sees that the empty state was reached. A guarded variable that is `NaN` is still an error `widget-variable`.
 - **Format numbers and dates:** `{{ total | number:0 }}` (de-ch thousands separator with `flg=de-ch`) and `{{ latest[0].datum | moment:'MMM YYYY' }}`.
 - AngularJS core directives (`ng-if`, `ng-show`, `ng-repeat`, `ng-class`, `ng-init` for constant lists) are allowed. Platform filters are not: `currentLanguage` is banned.
 
@@ -130,6 +130,12 @@ An assignment inside an interpolation, `{{ …; '' }}`, is a side effect. Exactl
 <span hidden>{{ datactx.parameters['refine.jahr'] = datactx.parameters['refine.jahr'] || latest[0].jahr; '' }}</span>
 ```
 
+For a parameter bound to an `ods-select`, test emptiness with `.length` and write an array. The select writes `[]` at start and when cleared, and `[]` is truthy, so the `||` form never restores the default; the select also fails on a scalar written after it linked (`select.js:413`). Pattern 3 uses this form:
+
+```html
+<span hidden>{{ datactx.parameters['refine.jahr'] = datactx.parameters['refine.jahr'].length ? datactx.parameters['refine.jahr'] : [(latest[0].datum | moment:'YYYY')]; '' }}</span>
+```
+
 **One-way copy.** It copies one filter to another context, renamed if needed.
 
 ```html
@@ -139,7 +145,7 @@ An assignment inside an interpolation, `{{ …; '' }}`, is a side effect. Exactl
 Rules the verifier enforces:
 
 - The target is `<ctx>.parameters['…']`, never a plain scope variable (scope rule) and never `$root`.
-- The guarded default reads the **same** parameter before `||`. The copy reads a parameter of a **different** context.
+- The guarded default reads the **same** parameter before `||`, or the same parameter's `.length` before `?`. The copy reads a parameter of a **different** context.
 - The interpolation sits in the text of a hidden element (`hidden`, or `style="display: none"`), never in an attribute.
 - Copies go one way. A copy back from the target context is an error, and so is copying one target parameter from two source contexts.
 - Only the guarded default's fallback (after `||`) may be any expression, e.g. `(latest[0].datum | moment:'YYYY')`. Some writes are deliberately **outside** the forms:
@@ -166,8 +172,9 @@ Exact value-to-colour maps:
 - **Charts:** `category-colors="{'Kultur': '#2D2D8A', 'Sport': '#E69F00'}"` on `ods-chart-query`. It is evaluated as an expression (`highcharts.js:2194,2233`) and keyed by the x value, or by the breakdown value with `series-breakdown` (`highcharts.js:639,1382`).
 - **Maps:** `color-categories` + `color-by-field` on `ods-map-layer display="categories"`, plus `color-categories-other` for shapes without data (`map.js:1445-1452`). A choropleth feeds them from `ods-color-gradient`: `color-categories="colors['colors']"`, with `ods-color-gradient-low="#E7E7F2"` and `ods-color-gradient-high="#2D2D8A"`. Choose the exponent per dataset.
 - Keys must be **exactly** the field's real values; a missing key silently falls back to the default palette. The dry-run stage checks this.
+- `ods-legend` carries no value-to-colour map: it reads only an `ods-color-gradient` object (value ranges, `legend.js:13`), so there is nothing for the dry-run to check on it.
 
-CI order for categories: `#2D2D8A, #E69F00, #009E73, #56B4E9, #CC79A7, #0072B2, #D55E00`. Use `#6B6B6B` for "Übrige/Andere", and group more than 7 categories into "Übrige". Red is never a category colour. Status colours are for real ratings only.
+CI order for categories: `#2D2D8A, #E69F00, #009E73, #56B4E9, #CC79A7, #0072B2, #D55E00`. Use `#6B6B6B` for "Übrige/Andere" where a Visualization can draw such a value (a map's `color-categories-other`). A **stacked chart** with more than 7 categories shows the 7 largest only and the rest goes into a KPI (Pattern 6); it has no "Übrige" series. Red is never a category colour. Status colours are for real ratings only.
 
 ## Highcharts 6.1.4
 
@@ -181,7 +188,10 @@ data.gr.ch serves **Highcharts 6.1.4** (2018), not the 11.1.0 that ods-widgets 2
 
 - Every `ods-map` carries `scroll-wheel-zoom="false"`, so the map never traps the reader's scrolling on the Host Page (`map.js:328`; lint rule `required-widget-attribute`).
 - Join data to boundaries by hand: `ods-color-gradient`, then `color-categories` + `color-by-field`. Never use the native join.
-- Boundaries come only from the Boundary Dataset catalogue on data.gr.ch.
+- Boundaries come only from the Boundary Dataset catalogue on data.gr.ch (`boundary-catalogue.md`). The dry-run checks that every data key has a shape.
+- Map Patterns: 9 choropleth, 10 tooltip from a nested context, 11 tooltip from the layer's own record, 12 point map with category colours, 13 boundary outlines (`patterns/09-…` to `13-…`, proven instance Pages in `patterns/instances/`).
+- A tooltip (the content of `ods-map-layer`) sees only `record` and the contexts declared inside it, never the Page's scope.
+- Render signals (errors): `map-no-features` (nothing drawn) and `map-too-small` (under 280px). The render stage also clicks the first shape or marker of every map that has a tooltip template (state "map shape click") and checks the tooltip's Widgets there. A map in `ods-simple-tabs` keeps the default rebuild behaviour and is checked once its tab is explored.
 
 ## Banned habits
 
@@ -208,3 +218,10 @@ The verifier reports each habit as error `banned-<id>`. Its matchers live in `ba
 `hard-coded-year` treats any number from 1900 to 2099 in `*-parameters`, `-where` or `ng-init` as a year. A threshold such as `anzahl >= 2000` in `ods-adv-analysis-where` is reported too. Avoid such thresholds. If one is truly needed, report the false positive to the owner instead of working around the lint.
 
 Lint is the only check for platform-only CSS: the render harness loads the portal's `front-angular.css`, so `.ods-box` and the Bootstrap grid would look fine there.
+
+## Layout and style
+
+- Every Page starts from `base-stylesheet.css` (CI colours, font, cards, layout shapes, heights derived from `--target-height`) and a skeleton in `skeleton/<shape>/`. `rulebook.md` holds what CSS cannot enforce: chart colours, status colours, content rules.
+- Pattern files live in `patterns/`. Pattern 15 (`patterns/15-footer.md`) is mandatory on every Page. Patterns 5 to 8 (`05-kpi.md`, `06-chart.md`, `07-table.md`, `08-tabs.md`) each have a verified instance Page in `patterns/instances/<pattern>/`.
+- Filter Patterns: 1 dropdown from facet values (`01-dropdown-from-facet.md`), 2 dropdown from `group-by` (`02-dropdown-from-group-by.md`), 3 latest period, variants A and B (`03-latest-period.md`), 4 copy a filter to another context (`04-copy-filter.md`), 14 empty-state guard (`14-empty-state.md`). Each names its proven instance under `patterns/instances/`.
+- Layout lint errors: `missing-footer` (no element with the footer class), `no-fixed-height` (an `ods-chart` or `ods-map` whose direct parent has no fixed height; use `hw-map-area`, `hw-chart-area` or `hw-table-area`), `fixed-width-too-wide` (a `width` or `min-width` above 375px outside `hw-table-scroll` and `hw-tabs`). The verifier reads the class names from `base-stylesheet.json` and `scroll-containers.json`.

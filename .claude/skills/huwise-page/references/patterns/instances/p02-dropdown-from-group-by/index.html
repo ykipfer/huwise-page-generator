@@ -1,0 +1,41 @@
+<ods-dataset-context context="datactx, optctx"
+    datactx-dataset="dvs_are_soci_20250224"
+    optctx-dataset="dvs_are_soci_20250224">
+  <div class="hw-page">
+    <div class="hw-body hw-shape-single">
+      <div class="hw-top">
+        <div class="hw-kpis">
+          <div class="hw-kpi" ods-aggregation="flaeche" ods-aggregation-context="datactx"
+               ods-aggregation-function="SUM" ods-aggregation-expression="flaeche_ha">
+            <p class="hw-kpi-value">{{ flaeche | number:0 }}</p>
+            <p class="hw-kpi-label">Bauzonen in Hektaren</p>
+          </div>
+        </div>
+        <div class="hw-filters">
+          <div class="hw-filter" ods-adv-analysis="regionen" ods-adv-analysis-context="optctx"
+               ods-adv-analysis-select="count(*) as anzahl" ods-adv-analysis-group-by="region"
+               ods-adv-analysis-order-by="region ASC" ods-adv-analysis-limit="20">
+            <p class="hw-filter-label">Region</p>
+            <ods-select options="regionen" selected-values="datactx.parameters['refine.region']"
+                label-modifier="region" value-modifier="region"
+                placeholder="Alle Regionen"></ods-select>
+          </div>
+        </div>
+      </div>
+      <div class="hw-card">
+        <p class="hw-card-title">Bauzonen nach Stand der Überbauung (Hektaren)</p>
+        <div class="hw-chart-area">
+          <ods-chart>
+            <ods-chart-query context="datactx" field-x="standueberbauung" maxpoints="0" sort="x">
+              <ods-chart-serie chart-type="column" function-y="SUM" expression-y="flaeche_ha" label-y="Hektaren" color="#2D2D8A"></ods-chart-serie>
+            </ods-chart-query>
+          </ods-chart>
+        </div>
+      </div>
+    </div>
+    <div class="hw-footer">
+      <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+      <a href="https://data.gr.ch/explore/dataset/dvs_are_soci_20250224/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+    </div>
+  </div>
+</ods-dataset-context>

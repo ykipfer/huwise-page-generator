@@ -1,0 +1,2 @@
+/* ods-text-search carries its own margin; the filter box has a fixed height. */
+.hw-page .hw-filter .odswidget-text-search { margin: 0; }

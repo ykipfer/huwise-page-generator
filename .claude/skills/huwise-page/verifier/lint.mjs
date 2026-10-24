@@ -3,10 +3,14 @@
 //   markup (comments are ignored); its CSS check is a plain text search.
 // - the closed Widget list and the banned habits, read from ../references/ so that knowledge and lint
 //   never drift apart.
+// - the layout rules (layout-lint.mjs): footer, fixed-height parents, fixed widths.
+// - the Companion Dataset rules (companion-lint.mjs): footer names both datasets, no values combined across them.
 // - warnings (never fail a Page): attributes on a listed Widget that its family file does not document.
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseFragment } from 'parse5';
+import { lintLayout } from './layout-lint.mjs';
+import { lintCompanion } from './companion-lint.mjs';
 
 const REFERENCES = path.join(import.meta.dirname, '..', 'references');
 const reference = file => JSON.parse(fs.readFileSync(path.join(REFERENCES, file), 'utf8'));
@@ -68,6 +72,11 @@ function undocumentedWidgetAttrs(el, ignored) {
   }).map(n => n.raw);
 }
 
+// The editor lets Widgets carry on* attributes (on-change). A Widget is an ods-* tag or an element
+// carrying an ods-* attribute (attribute form, also data-/x- prefixed). Any other element's attribute
+// starting with "on" is refused: the page-editor probe saw the editor refuse "any attribute starting with on".
+const isWidgetElement = el => el.tagName.startsWith('ods-') || el.attrs.some(a => /^(data-|x-)?ods-/.test(a.name));
+
 const REFUSED_TAGS = ['style', 'script', 'form', 'object', 'iframe'];
 
 const finding = (rule, file, loc, message, severity = 'error') => ({
@@ -113,7 +122,7 @@ function bannedOnElement(el, findings) {
   return claimed;
 }
 
-function* elements(node) {
+export function* elements(node) {
   for (const child of node.childNodes ?? []) {
     if (child.tagName) yield child;
     yield* elements(child);
@@ -121,7 +130,7 @@ function* elements(node) {
   }
 }
 
-function* textNodes(node) {
+export function* textNodes(node) {
   for (const child of node.childNodes ?? []) {
     if (child.nodeName === '#text') yield child;
     yield* textNodes(child);
@@ -154,6 +163,27 @@ function bannedInText(html, doc, findings) {
 }
 
 const attr = (el, name) => el.attrs?.find(a => a.name === name)?.value;
+
+// `expression` habits: matched only where AngularJS evaluates code, so display text stays free: inside
+// {{ … }} (in text and in any attribute value) and in the value of an ng-* attribute. Prose such as
+// "Stand 01.01.2025" or "weniger als < 2000 Einwohner" is not an expression.
+function bannedInExpressions(html, doc, findings) {
+  const run = (code, loc) => {
+    for (const [habit, m] of matchers('expression'))
+      if (new RegExp(m.expression).test(code)) findings.push(habitFinding(habit, 'index.html', loc));
+  };
+  for (const node of textNodes(doc)) {
+    const loc = node.sourceCodeLocation;
+    const raw = html.slice(loc.startOffset, loc.endOffset);
+    for (const m of raw.matchAll(/\{\{([\s\S]*?)\}\}/g)) run(m[1], locate(loc, raw, m.index));
+  }
+  for (const el of elements(doc))
+    for (const { name, value } of el.attrs) {
+      const loc = el.sourceCodeLocation.attrs?.[name] ?? el.sourceCodeLocation;
+      if (/^(data-|x-)?ng-/.test(name)) run(value, loc);
+      else for (const m of value.matchAll(/\{\{([\s\S]*?)\}\}/g)) run(m[1], loc);
+    }
+}
 
 // `repeatWithoutMax` habits: ng-repeat="row in rows" under (or on) the element that defines rows.
 function bannedRepeats(doc, findings) {
@@ -193,8 +223,11 @@ function bannedTabs(doc, findings) {
 // Side-effect assignments {{ … ; '' }} are allowed in exactly two forms (core.md), both writing one
 // context parameter from inside a hidden element:
 //   guarded default  {{ a.parameters['p'] = a.parameters['p'] || <expr>; '' }}
+//                    {{ a.parameters['p'] = a.parameters['p'].length ? a.parameters['p'] : <expr>; '' }}
+//                    (the second tests emptiness with .length: ods-select writes [] when cleared, and [] is truthy)
 //   one-way copy     {{ b.parameters['q'] = a.parameters['p']; '' }}
 const GUARDED_DEFAULT = /^(\w+)\.parameters\[(['"])([^'"]+)\2\]\s*=\s*\1\.parameters\[(['"])\3\4\]\s*\|\|\s*([^;]+?)\s*;\s*(''|"")$/;
+const GUARDED_DEFAULT_LENGTH = /^(\w+)\.parameters\[(['"])([^'"]+)\2\]\s*=\s*\1\.parameters\[(['"])\3\4\]\.length\s*\?\s*\1\.parameters\[(['"])\3\5\]\s*:\s*([^;]+?)\s*;\s*(''|"")$/;
 const ONE_WAY_COPY = /^(\w+)\.parameters\[(['"])([^'"]+)\2\]\s*=\s*(\w+)\.parameters\[(['"])([^'"]+)\5\]\s*;\s*(''|"")$/;
 const withoutStrings = expr => expr.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, '""');
 const assigns = expr => /(^|[^=!<>])=(?![=>])/.test(withoutStrings(expr));
@@ -209,9 +242,9 @@ function sideEffects(html, doc, findings) {
   const copies = [];   // { target, source, loc }
   const check = (expr, loc, inHiddenText) => {
     if (!assigns(expr)) return;
-    const guarded = expr.match(GUARDED_DEFAULT);
+    const guarded = expr.match(GUARDED_DEFAULT) ?? expr.match(GUARDED_DEFAULT_LENGTH);
     const copy = expr.match(ONE_WAY_COPY);
-    if (!(guarded && !assigns(guarded[5])) && !(copy && copy[1] !== copy[4]))
+    if (!(guarded && !assigns(guarded[guarded.length - 2])) && !(copy && copy[1] !== copy[4]))
       return report(loc, `Side effect outside the two allowed forms (guarded default, one-way copy): {{ ${expr} }}`);
     if (!inHiddenText)
       return report(loc, `Side effect must sit in the text of a hidden element (hidden or style="display: none"): {{ ${expr} }}`);
@@ -237,10 +270,10 @@ function sideEffects(html, doc, findings) {
   });
 }
 
-function lintHtml(html) {
+function lintHtml(html, doc) {
   const findings = [];
-  const doc = parseFragment(html, { sourceCodeLocationInfo: true });
   bannedInText(html, doc, findings);
+  bannedInExpressions(html, doc, findings);
   bannedRepeats(doc, findings);
   bannedTabs(doc, findings);
   sideEffects(html, doc, findings);
@@ -265,7 +298,7 @@ function lintHtml(html) {
         `"${name}" is not documented in the Widget family file (references/widgets/). It may still work; check the ods-widgets source before relying on it`, 'warning'));
     for (const { name, value } of el.attrs) {
       const attrLoc = loc.attrs?.[name] ?? loc;
-      if (/^on/.test(name) && !el.tagName.startsWith('ods-'))
+      if (/^on/.test(name) && !isWidgetElement(el))
         findings.push(finding('refused-on-attribute', 'index.html', attrLoc, `"${name}" on <${el.tagName}> is refused by the Huwise editor (only ods-* Widgets may carry on* attributes)`));
       // eslint-disable-next-line no-control-regex
       if (/^javascript:/i.test(value.replace(/[\u0000- ]/g, '')))
@@ -298,5 +331,6 @@ const unique = findings => [...new Map(findings.map(f =>
   [`${f.rule}@${f.location.file}:${f.location.line}:${f.location.column}`, f])).values()];
 
 export function lint({ html, css }) {
-  return unique([...lintHtml(html), ...lintCss(css)]);
+  const doc = parseFragment(html, { sourceCodeLocationInfo: true });
+  return unique([...lintHtml(html, doc), ...lintCss(css), ...lintLayout({ doc, css }), ...lintCompanion({ doc })]);
 }

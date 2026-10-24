@@ -1,0 +1,4 @@
+{
+  "note": "Selectors of the scroll containers the base stylesheet (base-stylesheet.css) defines. Overflow inside them is not reported by the render stage, and fixed widths inside them are not reported by the lint.",
+  "selectors": [".hw-table-scroll", ".hw-tabs", ".ods-simple-tabs-nav"]
+}

@@ -1,0 +1,55 @@
+<ods-dataset-context context="datactx, optctx"
+    datactx-dataset="dvs_awt_econ_20250203"
+    optctx-dataset="dvs_awt_econ_20250203">
+  <div class="hw-page">
+    <div class="hw-body hw-shape-single" ods-results="treffer" ods-results-context="datactx" ods-results-max="1">
+      <div class="hw-top">
+        <div class="hw-kpis">
+          <div class="hw-kpi" ng-if="treffer.length" ods-aggregation="logis" ods-aggregation-context="datactx"
+               ods-aggregation-function="SUM" ods-aggregation-expression="logiernachte">
+            <p class="hw-kpi-value">{{ logis | number:0 }}</p>
+            <p class="hw-kpi-label">Logiernächte</p>
+          </div>
+          <div class="hw-kpi" ng-if="!treffer || treffer.length === 0">
+            <p class="hw-kpi-value">–</p>
+            <p class="hw-kpi-label">Logiernächte</p>
+          </div>
+        </div>
+        <div class="hw-filters">
+          <div class="hw-filter" ods-facet-results="jahre" ods-facet-results-context="optctx"
+               ods-facet-results-facet-name="jahr" ods-facet-results-sort="alphanum">
+            <p class="hw-filter-label">Jahr</p>
+            <ods-select options="jahre" selected-values="datactx.parameters['refine.jahr']"
+                label-modifier="name" value-modifier="name"
+                placeholder="Alle Jahre"></ods-select>
+          </div>
+          <div class="hw-filter" ods-facet-results="monate" ods-facet-results-context="optctx"
+               ods-facet-results-facet-name="monat" ods-facet-results-sort="num">
+            <p class="hw-filter-label">Monat</p>
+            <ods-select options="monate" selected-values="datactx.parameters['refine.monat']"
+                label-modifier="['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][name - 1]"
+                value-modifier="name"
+                placeholder="Alle Monate"></ods-select>
+          </div>
+        </div>
+      </div>
+      <div class="hw-card">
+        <p class="hw-card-title">Logiernächte pro Monat</p>
+        <div class="hw-chart-area" ng-if="treffer.length">
+          <ods-chart timescale="month">
+            <ods-chart-query context="datactx" field-x="datum" timescale="month" maxpoints="0">
+              <ods-chart-serie chart-type="column" function-y="SUM" expression-y="logiernachte" label-y="Logiernächte" color="#2D2D8A"></ods-chart-serie>
+            </ods-chart-query>
+          </ods-chart>
+        </div>
+        <div class="hw-chart-area" ng-if="!treffer || treffer.length === 0">
+          <div class="hw-empty">Keine Daten für diese Auswahl</div>
+        </div>
+      </div>
+    </div>
+    <div class="hw-footer">
+      <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+      <a href="https://data.gr.ch/explore/dataset/dvs_awt_econ_20250203/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+    </div>
+  </div>
+</ods-dataset-context>

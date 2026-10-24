@@ -1,0 +1,57 @@
+<div class="hw-page hw-has-tabs">
+  <ods-dataset-context context="datactx" datactx-dataset="dvs_awt_econ_20250203">
+    <div class="hw-body hw-shape-single">
+      <div class="hw-top">
+        <div class="hw-kpis">
+          <div class="hw-kpi" ods-aggregation="kpi_value" ods-aggregation-context="datactx" ods-aggregation-function="SUM" ods-aggregation-expression="logiernachte">
+            <p class="hw-kpi-value">{{ kpi_value | number:0 }}</p>
+            <p class="hw-kpi-label">Logiernächte</p>
+          </div>
+          <div class="hw-kpi" ods-aggregation="kpi_value" ods-aggregation-context="datactx" ods-aggregation-function="SUM" ods-aggregation-expression="ankunfte">
+            <p class="hw-kpi-value">{{ kpi_value | number:0 }}</p>
+            <p class="hw-kpi-label">Ankünfte</p>
+          </div>
+        </div>
+        <div class="hw-filters">
+          <div class="hw-filter">
+            <p class="hw-filter-label">Gemeinde suchen</p>
+            <ods-text-search context="datactx" field="gemeinde_name" placeholder="Gemeinde"></ods-text-search>
+          </div>
+        </div>
+      </div>
+      <div class="hw-card">
+        <ods-simple-tabs>
+          <ods-simple-tab label="Logiernächte">
+            <div class="hw-chart-area">
+              <ods-chart timescale="year">
+                <ods-chart-query context="datactx" field-x="datum" timescale="year">
+                  <ods-chart-serie expression-y="logiernachte" function-y="SUM" chart-type="column" color="#2D2D8A" label-y="Logiernächte"></ods-chart-serie>
+                </ods-chart-query>
+              </ods-chart>
+            </div>
+          </ods-simple-tab>
+          <ods-simple-tab label="Ankünfte">
+            <div class="hw-chart-area">
+              <ods-chart timescale="year">
+                <ods-chart-query context="datactx" field-x="datum" timescale="year">
+                  <ods-chart-serie expression-y="ankunfte" function-y="SUM" chart-type="column" color="#2D2D8A" label-y="Ankünfte"></ods-chart-serie>
+                </ods-chart-query>
+              </ods-chart>
+            </div>
+          </ods-simple-tab>
+          <ods-simple-tab label="Tabelle">
+            <div class="hw-table-area">
+              <div class="hw-table-scroll">
+                <ods-table context="datactx" displayed-fields="gemeinde_name,datum,logiernachte,ankunfte" sort="-datum"></ods-table>
+              </div>
+            </div>
+          </ods-simple-tab>
+        </ods-simple-tabs>
+      </div>
+    </div>
+    <div class="hw-footer">
+      <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+      <a href="https://data.gr.ch/explore/dataset/dvs_awt_econ_20250203/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+    </div>
+  </ods-dataset-context>
+</div>

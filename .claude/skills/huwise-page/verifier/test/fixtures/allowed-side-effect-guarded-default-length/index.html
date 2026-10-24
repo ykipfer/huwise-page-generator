@@ -1,0 +1,9 @@
+<div class="page">
+<div ods-adv-analysis="latest" ods-adv-analysis-context="datactx" ods-adv-analysis-select="max(datum) as datum">
+  <span hidden>
+    {{ datactx.parameters['refine.jahr'] =
+       datactx.parameters['refine.jahr'].length ? datactx.parameters['refine.jahr'] : [(latest[0].datum | moment:'YYYY')]; '' }}
+  </span>
+</div>
+</div>
+<div class="hw-footer">Letzte Aktualisierung</div>

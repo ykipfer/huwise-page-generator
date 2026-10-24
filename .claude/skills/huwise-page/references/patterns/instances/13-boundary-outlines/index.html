@@ -1,0 +1,40 @@
+<div class="hw-page hw-has-title">
+  <div class="hw-title">
+    <p class="hw-eyebrow">Amt für Wirtschaft und Tourismus</p>
+    <h1>Sportanlagen von nationaler und kantonaler Bedeutung</h1>
+  </div>
+  <ods-dataset-context context="datactx, geoctx"
+      datactx-dataset="dvs_awt_educ_20251002"
+      geoctx-dataset="dvs_awt_regi_20250211"
+      datactx-parameters="{'disjunctive.anlagetyp': true}">
+    <div class="hw-body hw-shape-single">
+      <div class="hw-top">
+        <div class="hw-kpis">
+          <div class="hw-kpi" ods-aggregation="total" ods-aggregation-context="datactx" ods-aggregation-function="COUNT">
+            <p class="hw-kpi-value">{{ total | number:0 }}</p><p class="hw-kpi-label">Anlagen</p>
+          </div>
+        </div>
+        <div class="hw-filters">
+          <div class="hw-filter" ods-facet-results="typen" ods-facet-results-context="datactx" ods-facet-results-facet-name="anlagetyp" ods-facet-results-sort="alphanum">
+            <p class="hw-filter-label">Bedeutung</p>
+            <ods-select options="typen" label-modifier="name" value-modifier="name" selected-values="datactx.parameters['refine.anlagetyp']" placeholder="Alle Anlagen"></ods-select>
+          </div>
+        </div>
+      </div>
+      <div class="hw-card">
+        <p class="hw-card-title">Anlagen und Regionsgrenzen</p>
+        <div class="hw-map-area">
+          <ods-map location="8,46.75,9.6" scroll-wheel-zoom="false" toolbar-geolocation="false" toolbar-drawing="false">
+            <ods-map-layer context="geoctx" display="categories" color="#6B6B6B"
+                shape-opacity="0" border-color="#6B6B6B" border-size="1.5" tooltip-disabled="true"></ods-map-layer>
+            <ods-map-layer context="datactx" display="categories" color="#2D2D8A" size="6" tooltip-disabled="true"></ods-map-layer>
+          </ods-map>
+        </div>
+      </div>
+    </div>
+    <div class="hw-footer">
+      <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+      <a href="https://data.gr.ch/explore/dataset/dvs_awt_educ_20251002/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+    </div>
+  </ods-dataset-context>
+</div>

@@ -1,0 +1,403 @@
+/* Huwise Page base stylesheet (CI Rules, ADR 0001; layout system, ADR 0002).
+   Placed UNCHANGED at the top of every Page's CSS. The Page's own rules come after it.
+   Page CSS is global on the platform, so every rule is scoped under the root class .hw-page.
+   The Page sets its Target Height after this block:  .hw-page { --target-height: 800px; }
+   Every height below derives from that one value with calc(). */
+
+@font-face {
+  font-family: 'Eudoxus Sans';
+  src: url('/assets/theme_font/EudoxusSans-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Eudoxus Sans';
+  src: url('/assets/theme_font/EudoxusSans-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Eudoxus Sans';
+  src: url('/assets/theme_font/EudoxusSans-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- tokens and height budget ---------- */
+.hw-page {
+  /* colours */
+  --hw-brand: #2D2D8A;
+  --hw-tint: #E7E7F2;
+  --hw-ink: #111111;
+  --hw-ink-soft: #2A2A2A;
+  --hw-muted: #6B6B6B;
+  --hw-rule: #D9D9D6;
+  --hw-bg: #FBFAF7;
+  --hw-paper: #FFFFFF;
+  --hw-success: #2F7D4F;
+  --hw-success-tint: #DDEEDF;
+  --hw-warning: #B47A12;
+  --hw-warning-tint: #F4EAD6;
+  --hw-danger: #C8102E;
+  --hw-danger-tint: #F7E1E4;
+  --hw-info: #4F8E94;
+  --hw-info-tint: #E2F0F1;
+
+  /* fixed sizes that the height budget subtracts (wide layout; the media queries below shrink them) */
+  --hw-chrome: 40px;       /* portal wrapper around the Page: top offset plus the main element's bottom margin */
+  --hw-pad: 12px;
+  --hw-gap: 12px;
+  --hw-card-pad: 12px;
+  --hw-footer-h: 32px;
+  --hw-kpi-h: 72px;
+  --hw-filter-h: 52px;
+  --hw-tabs-h: 40px;
+  --hw-title-h: 44px;
+  --hw-card-head-h: 28px;
+  --hw-top-h: calc(var(--hw-kpi-h) + var(--hw-gap) + var(--hw-filter-h));   /* KPI row + filter row */
+  --hw-tabs-used: 0px;     /* .hw-has-tabs reserves the tab bar */
+  --hw-title-used: 0px;    /* .hw-has-title reserves the title */
+
+  /* the budget: Target Height minus chrome, padding, title, footer */
+  --hw-page-h: calc(var(--target-height, 800px) - var(--hw-chrome));
+  --hw-body-h: calc(var(--hw-page-h) - 2 * var(--hw-pad) - var(--hw-title-used) - var(--hw-footer-h) - var(--hw-gap));
+
+  box-sizing: border-box;
+  height: var(--hw-page-h);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--hw-pad);
+  display: flex;
+  flex-direction: column;
+  gap: var(--hw-gap);
+  background: var(--hw-bg);
+  color: var(--hw-ink);
+  font-family: 'Eudoxus Sans', "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.hw-page.hw-has-tabs { --hw-tabs-used: calc(var(--hw-tabs-h) + 8px); }
+.hw-page.hw-has-title { --hw-title-used: calc(var(--hw-title-h) + var(--hw-gap)); }
+
+.hw-page *,
+.hw-page *::before,
+.hw-page *::after { box-sizing: border-box; }
+.hw-page p,
+.hw-page h1,
+.hw-page h2,
+.hw-page h3 { margin: 0; }
+
+/* ---------- optional title ---------- */
+.hw-page .hw-title { flex: none; height: var(--hw-title-h); }
+.hw-page .hw-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--hw-muted);
+}
+.hw-page .hw-title h1 {
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--hw-ink);
+}
+
+/* ---------- body: one of three shapes (wide) or Narrow (below 720px) ---------- */
+.hw-page .hw-body {
+  flex: none;
+  height: var(--hw-body-h);
+  display: flex;
+  flex-direction: column;
+  gap: var(--hw-gap);
+}
+.hw-page .hw-shape-sidebar { --hw-above: 0px; --hw-lead: var(--hw-tabs-used); }
+.hw-page .hw-shape-grid,
+.hw-page .hw-shape-single {
+  --hw-above: calc(var(--hw-top-h) + var(--hw-gap));
+  --hw-lead: calc(var(--hw-card-head-h) + var(--hw-tabs-used));
+}
+/* height of the one large area inside a card */
+.hw-page .hw-body { --hw-area-h: calc(var(--hw-body-h) - var(--hw-above) - 2 * var(--hw-card-pad) - var(--hw-lead)); }
+
+/* Sidebar + main */
+.hw-page .hw-shape-sidebar { flex-direction: row; align-items: flex-start; }
+.hw-page .hw-shape-sidebar .hw-top { flex: none; width: 240px; display: flex; flex-direction: column; gap: var(--hw-gap); }
+.hw-page .hw-shape-sidebar .hw-kpis { display: grid; grid-auto-rows: var(--hw-kpi-h); gap: 8px; }
+.hw-page .hw-shape-sidebar .hw-filters { display: flex; flex-direction: column; gap: 8px; }
+.hw-page .hw-shape-sidebar .hw-main { flex: 1; min-width: 0; }
+
+/* Card grid (2 or 3 cards) and Single: KPI row and filter row on top, then the cards */
+.hw-page .hw-shape-grid .hw-top,
+.hw-page .hw-shape-single .hw-top { flex: none; height: var(--hw-top-h); display: flex; flex-direction: column; gap: var(--hw-gap); }
+.hw-page .hw-shape-grid .hw-kpis,
+.hw-page .hw-shape-single .hw-kpis { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: var(--hw-kpi-h); gap: var(--hw-gap); }
+.hw-page .hw-shape-grid .hw-filters,
+.hw-page .hw-shape-single .hw-filters { display: flex; flex-wrap: wrap; gap: var(--hw-gap); height: var(--hw-filter-h); }
+.hw-page .hw-shape-grid .hw-filter,
+.hw-page .hw-shape-single .hw-filter { flex: 0 1 240px; }
+.hw-page .hw-cards { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--hw-gap); }
+
+/* ---------- cards ---------- */
+.hw-page .hw-card {
+  min-width: 0;
+  padding: var(--hw-card-pad);
+  background: var(--hw-paper);
+  border-radius: 12px;
+  box-shadow: 0 3px 14px rgba(26, 26, 26, 0.08);
+}
+.hw-page .hw-card-title {
+  height: var(--hw-card-head-h);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hw-ink);
+}
+.hw-page .hw-shape-sidebar .hw-card-title { display: none; }
+
+/* KPI cards: rule border, 4px brand-blue top border, 26px numbers */
+.hw-page .hw-kpi {
+  min-width: 0;
+  padding: 8px 12px;
+  background: var(--hw-paper);
+  border: 1px solid var(--hw-rule);
+  border-top: 4px solid var(--hw-brand);
+  border-radius: 12px;
+  text-align: center;
+  overflow: hidden;
+}
+.hw-page .hw-kpi-value {
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--hw-brand);
+  white-space: nowrap;
+}
+.hw-page .hw-kpi-label {
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 500;
+  color: var(--hw-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* filters */
+.hw-page .hw-filter { min-width: 0; display: flex; flex-direction: column; gap: 4px; height: var(--hw-filter-h); }
+.hw-page .hw-filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--hw-muted);
+}
+.hw-page .hw-filter-control {
+  height: 30px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--hw-rule);
+  border-radius: 4px;
+  background: var(--hw-paper);
+  color: var(--hw-ink-soft);
+}
+.hw-page .odswidget-select { font-size: 13px; }
+.hw-page .odswidget-text-search input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  border: 1px solid var(--hw-rule);
+  border-radius: 4px;
+  color: var(--hw-ink);
+}
+
+/* tab bar (scrolls sideways when the tabs do not fit) */
+.hw-page .hw-tabs {
+  display: flex;
+  height: var(--hw-tabs-h);
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--hw-rule);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.hw-page .hw-tab {
+  flex: none;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+  font-weight: 700;
+  color: var(--hw-muted);
+  white-space: nowrap;
+}
+.hw-page .hw-tab.is-active { color: var(--hw-brand); border-bottom-color: var(--hw-brand); }
+
+/* The tab bar that the ods-simple-tabs Widget generates (Pattern 8). It sits inside the card; the heights are the ones
+   .hw-has-tabs reserves (--hw-tabs-h plus 8px). The nav scrolls sideways when the tabs do not fit (a scroll container). */
+.hw-page .ods-simple-tabs-container { margin: 0; }
+.hw-page .ods-simple-tabs-nav {
+  height: var(--hw-tabs-h);
+  margin: 0 0 8px;
+  border-bottom: 1px solid var(--hw-rule);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.hw-page .ods-simple-tabs-nav-link {
+  height: 100%;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: var(--hw-muted);
+}
+.hw-page .ods-simple-tabs-nav-link:hover,
+.hw-page .ods-simple-tabs-nav-link:focus { border-bottom-color: var(--hw-rule); }
+.hw-page .ods-simple-tabs-nav-link.ods-simple-tabs-nav-link-active { color: var(--hw-brand); border-bottom-color: var(--hw-brand); }
+
+/* ---------- areas: fixed heights derived from the budget, with minimums ---------- */
+.hw-page .hw-map-area { height: max(280px, var(--hw-area-h)); position: relative; }
+.hw-page .hw-chart-area { height: max(240px, var(--hw-area-h)); position: relative; }
+.hw-page .hw-table-area { height: max(200px, var(--hw-area-h)); }
+/* The only place that changes Widget CSS: the map keeps a 400px minimum and the chart 200px by default;
+   inside an area both fill the area's fixed height instead. */
+.hw-page .odswidget-map,
+.hw-page .odswidget-map__map { height: 100%; min-height: 0; }
+.hw-page .ods-chart { height: 100%; min-height: 0; }
+
+/* The platform appends a timezone caption below every time-based chart (Pattern 6). It sits outside the fixed-height
+   area, so it pushes into the footer at phone width. */
+.hw-page .chart-timezone-caption { display: none; }
+
+/* A context element may wrap the whole Page body (the footer reads its dataset): it must not become a layout box. */
+.hw-page ods-dataset-context { display: contents; }
+
+/* Widget-free stand-in for a Visualization */
+.hw-page .hw-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  border: 1px dashed var(--hw-rule);
+  border-radius: 4px;
+  background: var(--hw-tint);
+  color: var(--hw-ink-soft);
+}
+
+/* Empty-state message (Pattern 14), centred in the area the Visualization would fill */
+.hw-page .hw-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  border: 1px dashed var(--hw-rule);
+  border-radius: 4px;
+  color: var(--hw-muted);
+}
+
+/* table card: 4px radius, brand-blue header row, alternating off-white rows. The table scrolls vertically
+   inside its area and, when it is wider than the Page, sideways inside the wrapper. */
+.hw-page .hw-card.hw-card--table { padding: 0; border-radius: 4px; overflow: hidden; }
+.hw-page .hw-table-scroll { height: 100%; overflow: auto; }
+.hw-page .hw-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.hw-page .hw-table thead th {
+  position: sticky;
+  top: 0;
+  padding: 7px 12px;
+  background: var(--hw-brand);
+  color: #FFFFFF;
+  text-align: left;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hw-page .hw-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--hw-rule);
+  color: var(--hw-ink);
+}
+.hw-page .hw-table tbody tr:nth-child(even) { background: var(--hw-bg); }
+.hw-page .hw-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* status colours: real ratings only (see the rulebook) */
+.hw-page .hw-status-success { background: var(--hw-success-tint); color: var(--hw-success); }
+.hw-page .hw-status-warning { background: var(--hw-warning-tint); color: var(--hw-warning); }
+.hw-page .hw-status-danger { background: var(--hw-danger-tint); color: var(--hw-danger); }
+.hw-page .hw-status-info { background: var(--hw-info-tint); color: var(--hw-info); }
+
+/* ---------- footer (Pattern 15): mandatory, fixed height, never dropped ---------- */
+.hw-page .hw-footer {
+  flex: none;
+  height: var(--hw-footer-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--hw-rule);
+  font-size: 12px;
+  color: var(--hw-muted);
+}
+.hw-page .hw-footer-updated { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hw-page .hw-footer a { flex: none; color: var(--hw-brand); font-weight: 500; text-decoration: none; }
+.hw-page .hw-footer a:hover { text-decoration: underline; }
+
+/* ---------- Narrow: below 720px, every Page (phones and every Klein embed) ----------
+   A KPI and filter row on top, then one large area. */
+@media (max-width: 719px) {
+  .hw-page {
+    --hw-pad: 8px;
+    --hw-gap: 8px;
+    --hw-card-pad: 8px;
+    --hw-kpi-h: 56px;
+    --hw-filter-h: 48px;
+    --hw-title-h: 40px;
+  }
+  .hw-page .hw-shape-sidebar { --hw-above: calc(var(--hw-top-h) + var(--hw-gap)); flex-direction: column; align-items: stretch; }
+  .hw-page .hw-body { --hw-above: calc(var(--hw-top-h) + var(--hw-gap)); }
+  .hw-page .hw-shape-sidebar .hw-top,
+  .hw-page .hw-shape-grid .hw-top,
+  .hw-page .hw-shape-single .hw-top { flex: none; width: auto; height: var(--hw-top-h); display: flex; flex-direction: column; gap: var(--hw-gap); }
+  .hw-page .hw-shape-sidebar .hw-kpis,
+  .hw-page .hw-shape-grid .hw-kpis,
+  .hw-page .hw-shape-single .hw-kpis { grid-template-columns: repeat(4, 1fr); grid-auto-rows: var(--hw-kpi-h); gap: var(--hw-gap); }
+  .hw-page .hw-shape-sidebar .hw-filters,
+  .hw-page .hw-shape-grid .hw-filters,
+  .hw-page .hw-shape-single .hw-filters { flex-direction: row; flex-wrap: nowrap; height: var(--hw-filter-h); gap: var(--hw-gap); }
+  .hw-page .hw-shape-sidebar .hw-filter,
+  .hw-page .hw-shape-grid .hw-filter,
+  .hw-page .hw-shape-single .hw-filter { flex: 1 1 0; }
+  .hw-page .hw-shape-sidebar .hw-main { flex: none; }
+  .hw-page .hw-shape-sidebar { --hw-lead: var(--hw-tabs-used); }
+  .hw-page .hw-shape-grid .hw-cards > .hw-card:not(:first-child) { display: none; }
+  .hw-page .hw-shape-grid .hw-cards { grid-auto-flow: row; grid-auto-columns: minmax(0, 1fr); }
+}
+
+/* Below 480px: KPI tiles compact and two per row, filters full width */
+@media (max-width: 479px) {
+  .hw-page { --hw-top-h: calc(2 * var(--hw-kpi-h) + 2 * var(--hw-filter-h) + 3 * var(--hw-gap)); }
+  .hw-page .hw-shape-sidebar .hw-kpis,
+  .hw-page .hw-shape-grid .hw-kpis,
+  .hw-page .hw-shape-single .hw-kpis { grid-template-columns: repeat(2, 1fr); }
+  .hw-page .hw-shape-sidebar .hw-filters,
+  .hw-page .hw-shape-grid .hw-filters,
+  .hw-page .hw-shape-single .hw-filters { flex-direction: column; height: auto; }
+  .hw-page .hw-kpi { padding: 4px 8px; }
+  .hw-page .hw-kpi-value { font-size: 20px; }
+  .hw-page .hw-kpi-label { font-size: 11px; }
+}
+
+.hw-page { --target-height: 800px; }
+
+/* Pattern 9: the gradient scope wraps the top row and the card without becoming a layout box;
+   the legend floats over the map's bottom-left corner, scaled down so it leaves the map visible. */
+.hw-page .hw-gradient { display: contents; }
+.hw-page .hw-map-legend { position: absolute; left: 8px; bottom: 8px; z-index: 500; width: 200px; transform: scale(0.7); transform-origin: left bottom; padding: 6px 8px; background: rgba(255, 255, 255, 0.92); border-radius: 4px; }
+
+/* Pattern 11 and 10: tooltip text. */
+.hw-page .hw-tip { font-size: 12px; line-height: 1.35; color: var(--hw-ink); }
+.hw-page .hw-tip-title { font-weight: 700; color: var(--hw-brand); }
