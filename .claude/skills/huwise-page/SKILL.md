@@ -58,7 +58,7 @@ The closed lists (the Widget list, the Patterns and the Boundary Dataset catalog
 
 ## Files
 
-- `references/`: `core.md`, `rulebook.md`, `base-stylesheet.css`, `widgets/`, `patterns/`, `skeleton/`, `boundary-catalogue.md`, `intake.md`, `page-sketch.md`.
+- `references/`: `core.md`, `rulebook.md`, `base-stylesheet.css`, `widgets/`, `patterns/`, `skeleton/` (static shapes for sketches; `skeleton/page/` is the complete skeleton Page, the starting point for a built Page), `boundary-catalogue.md`, `intake.md`, `page-sketch.md`.
 - `verifier/`: `verify.mjs` (staged check), `intake.mjs`, `preview.mjs`. Run `npm install` and `npx playwright install chromium` there once.
 - `benchmark/`: the six fixed Page Requests.
 - `pages/<slug>/` at the repo root: one folder per Page.

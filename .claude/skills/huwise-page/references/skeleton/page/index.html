@@ -1,0 +1,78 @@
+<!-- Skeleton Page: shape Sidebar + main, one card with tabs (chart, map). It shows how Patterns combine:
+     3 (latest period, variant A), 5 (KPI), 1 (filter), 6 (chart), 9 (choropleth on a Boundary Dataset), 8 (tabs), 15 (footer).
+     Contexts: yearctx (period list, no refine), datactx (data), geoctx (Boundary Dataset). -->
+<div class="hw-page hw-has-tabs">
+  <ods-dataset-context context="yearctx" yearctx-dataset="dvs_awt_econ_20250203">
+    <div ods-facet-results="jahre" ods-facet-results-context="yearctx"
+         ods-facet-results-facet-name="jahr" ods-facet-results-sort="-num">
+      <ods-dataset-context ng-if="jahre.length" context="datactx, geoctx"
+          datactx-dataset="dvs_awt_econ_20250203"
+          datactx-parameters="{'refine.jahr': ''+jahre[0].name}"
+          geoctx-dataset="dvs_awt_regi_202502110">
+        <div class="hw-body hw-shape-sidebar">
+          <aside class="hw-top">
+            <div class="hw-kpis">
+              <div class="hw-kpi" ods-aggregation="kpi_value" ods-aggregation-context="datactx" ods-aggregation-function="SUM" ods-aggregation-expression="logiernachte">
+                <p class="hw-kpi-value">{{ kpi_value | number:0 }}</p>
+                <p class="hw-kpi-label">Logiernächte</p>
+              </div>
+              <div class="hw-kpi" ods-aggregation="kpi_value" ods-aggregation-context="datactx" ods-aggregation-function="SUM" ods-aggregation-expression="ankunfte">
+                <p class="hw-kpi-value">{{ kpi_value | number:0 }}</p>
+                <p class="hw-kpi-label">Ankünfte</p>
+              </div>
+            </div>
+            <div class="hw-filters">
+              <div class="hw-filter">
+                <p class="hw-filter-label">Jahr</p>
+                <span hidden>{{ datactx.parameters['refine.jahr'] = datactx.parameters['refine.jahr'].length ? datactx.parameters['refine.jahr'] : [''+jahre[0].name]; '' }}</span>
+                <ods-select options="jahre" selected-values="datactx.parameters['refine.jahr']"
+                    label-modifier="name" value-modifier="name"
+                    placeholder="Jahr wählen"></ods-select>
+              </div>
+            </div>
+          </aside>
+          <section class="hw-main">
+            <div class="hw-card">
+              <ods-simple-tabs>
+                <ods-simple-tab label="Diagramm">
+                  <div class="hw-chart-area">
+                    <ods-chart timescale="month">
+                      <ods-chart-query context="datactx" field-x="datum" timescale="month" maxpoints="0">
+                        <ods-chart-serie chart-type="column" function-y="SUM" expression-y="logiernachte" label-y="Logiernächte" color="#2D2D8A"></ods-chart-serie>
+                      </ods-chart-query>
+                    </ods-chart>
+                  </div>
+                </ods-simple-tab>
+                <ods-simple-tab label="Karte">
+                  <div class="hw-gradient" ods-color-gradient="gradient"
+                       ods-color-gradient-context="datactx"
+                       ods-color-gradient-x="gemeindenummer"
+                       ods-color-gradient-serie="SUM(logiernachte)"
+                       ods-color-gradient-low="#E7E7F2"
+                       ods-color-gradient-high="#2D2D8A"
+                       ods-color-gradient-pow-exponent="0.4">
+                    <div class="hw-map-area">
+                      <ods-map location="8,46.75,9.6" scroll-wheel-zoom="false" toolbar-geolocation="false" toolbar-drawing="false" display-legend="false">
+                        <ods-map-layer context="geoctx" display="categories"
+                            color-categories="gradient['colors']" color-by-field="bfs_nummer"
+                            color-categories-other="#D9D9D6"
+                            border-color="#FFFFFF" shape-opacity="1" tooltip-disabled="true"></ods-map-layer>
+                      </ods-map>
+                      <div class="hw-map-legend">
+                        <ods-legend color-gradient="gradient" title="Logiernächte" no-value-color="#D9D9D6" decimal-precision="0"></ods-legend>
+                      </div>
+                    </div>
+                  </div>
+                </ods-simple-tab>
+              </ods-simple-tabs>
+            </div>
+          </section>
+        </div>
+        <div class="hw-footer">
+          <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+          <a href="https://data.gr.ch/explore/dataset/dvs_awt_econ_20250203/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: data.gr.ch</a>
+        </div>
+      </ods-dataset-context>
+    </div>
+  </ods-dataset-context>
+</div>
