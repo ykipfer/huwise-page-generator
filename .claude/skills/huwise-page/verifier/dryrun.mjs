@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseFragment } from 'parse5';
 import { elements, textNodes } from './lint.mjs';
+import { withApiKey } from './apikey.mjs';
 
 const CATALOGUE = JSON.parse(fs.readFileSync(
   path.join(import.meta.dirname, '..', 'references', 'boundary-catalogue.json'), 'utf8')).levels;
@@ -38,7 +39,7 @@ const finding = (rule, loc, message, severity = 'error') => ({
 });
 
 async function defaultFetchJson(url) {
-  const res = await fetch(url, { headers: { accept: 'application/json' } });
+  const res = await fetch(url, { headers: withApiKey(url, { accept: 'application/json' }) });
   let body = null;
   try { body = await res.json(); } catch { /* non-JSON error page */ }
   return { status: res.status, body };

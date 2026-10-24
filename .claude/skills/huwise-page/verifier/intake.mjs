@@ -4,12 +4,13 @@
 //        node intake.mjs explore <dataset-id>  fallback when the MCP is unavailable: public Explore API v2.1
 //        node intake.mjs facets <dataset-id> <field> [limit]   distinct values of a field (Explore API, fallback)
 import { pathToFileURL } from 'node:url';
+import { withApiKey } from './apikey.mjs';
 const HOST = process.env.HUWISE_HOST ?? 'https://data.gr.ch';
 
 export const v1Url = id => `${HOST}/api/datasets/1.0/${encodeURIComponent(id)}/?lang=de`;
 
 async function getJson(url) {
-  const res = await fetch(url, { headers: { accept: 'application/json' } });
+  const res = await fetch(url, { headers: withApiKey(url, { accept: 'application/json' }) });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${url}`);
   return res.json();
 }

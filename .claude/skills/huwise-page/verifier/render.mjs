@@ -5,6 +5,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { chromium } from 'playwright';
 import { annotate } from './annotate.mjs';
+import { routeApiKey } from './apikey.mjs';
 
 const PORTAL = 'https://data.gr.ch';
 const LIVE_PAGE = `${PORTAL}/pages/mittelverwendung-im-bereich-landeslotterie/?headless=true&flg=de-ch`;
@@ -335,6 +336,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
   try {
     for (const w of widths) {
       const page = await browser.newPage({ viewport: { width: w, height: targetHeight } });
+      await routeApiKey(page);
       const net = { inflight: 0, last: Date.now() };
       let issues = [];
       const apiFailed = new Set();
