@@ -21,9 +21,11 @@ Ask for nothing else. If the dataset ID or prompt is missing, ask for it.
 2. **Page Sketch**: `references/page-sketch.md`. Widget-free markup on the base stylesheet, with placeholders, in `pages/<slug>/`.
 3. **Preview**: `verifier/preview.mjs pages/<slug> --target-height <N> --embed-size <size>` writes `preview.html` and opens it in the browser.
 4. **Plan list in chat** with flags, then the gate: regenerate the sketch on every change request until the owner says ok. Nothing is built before that. Normal runs cannot skip it.
-5. **Build**, 6. **Verify**, 7. **Handoff**: described when those steps land (ticket #30). The approved sketch markup becomes the Page.
+5. **Build**: `references/build-verify-handoff.md`. The approved sketch markup becomes the Page; placeholders are swapped for closed-list Widgets from Patterns, containers, classes and order kept, no custom JS, latest-period defaults computed from the data.
+6. **Verify**: `node verifier/verify.mjs pages/<slug> --target-height <N> --embed-size <size> --iterate` while iterating (lint, dry-run, render at 1200px), then the same without `--iterate` for the final pass at every width. Review the 375px shot and each state at 1200px against the CI Rules and the Page Request. At most 3 fix iterations; then stop and show the report. About 30 API requests per full run.
+7. **Handoff**: `node verifier/handoff.mjs pages/<slug> --dataset-title "<title>" --caption "<Legende>" --iterations <n>` writes `pages/<slug>/handoff.md` (editor steps, embed URL, gr.ch component values, verification summary, screenshots); repeat it in chat with the 375px and 1200px screenshots. A Page still failing after 3 iterations gets the same file marked "not passing".
 
-Always read `references/core.md` and `references/rulebook.md` before writing a Page. Never commit; the owner decides what goes into history. The Page folder's `index.html`, `stylesheet.css` and handoff are tracked, `preview.html` and `verifier-output/` are ignored.
+Always read `references/core.md` and `references/rulebook.md` before writing a Page. Never commit; the owner decides what goes into history. The Page folder's `index.html`, `stylesheet.css` and `handoff.md` are tracked, `preview.html` and `verifier-output/` are ignored.
 
 ## Widget index
 
@@ -59,6 +61,6 @@ The closed lists (the Widget list, the Patterns and the Boundary Dataset catalog
 ## Files
 
 - `references/`: `core.md`, `rulebook.md`, `base-stylesheet.css`, `widgets/`, `patterns/`, `skeleton/` (static shapes for sketches; `skeleton/page/` is the complete skeleton Page, the starting point for a built Page), `boundary-catalogue.md`, `intake.md`, `page-sketch.md`.
-- `verifier/`: `verify.mjs` (staged check), `intake.mjs`, `preview.mjs`. Run `npm install` and `npx playwright install chromium` there once.
+- `verifier/`: `verify.mjs` (staged check), `intake.mjs`, `preview.mjs`, `handoff.mjs`. Run `npm install` and `npx playwright install chromium` there once.
 - `benchmark/`: the six fixed Page Requests.
 - `pages/<slug>/` at the repo root: one folder per Page.
