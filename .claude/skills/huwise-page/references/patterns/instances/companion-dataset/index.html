@@ -1,0 +1,99 @@
+<div class="hw-page hw-has-tabs">
+  <ods-dataset-context context="stampctx" stampctx-dataset="dvs_awt_soci_20260112">
+    <div ods-adv-analysis="latest" ods-adv-analysis-context="stampctx"
+         ods-adv-analysis-select="jahr, semester" ods-adv-analysis-group-by="jahr, semester"
+         ods-adv-analysis-order-by="jahr DESC, semester DESC" ods-adv-analysis-limit="1">
+      <ods-dataset-context ng-if="latest.length" context="datactx, mapctx, trendctx, compctx, geoctx"
+          datactx-dataset="dvs_awt_soci_20260112"
+          datactx-parameters="{'disjunctive.name': true, 'refine.jahr': ''+(latest[0].jahr | moment:'YYYY'), 'refine.semester': ''+latest[0].semester}"
+          mapctx-dataset="dvs_awt_soci_20260112"
+          mapctx-parameters="{'refine.jahr': ''+(latest[0].jahr | moment:'YYYY'), 'refine.semester': ''+latest[0].semester}"
+          trendctx-dataset="dvs_awt_soci_20260112"
+          compctx-dataset="dvs_awt_econ_20250203"
+          geoctx-dataset="dvs_awt_regi_202502110">
+        <div class="hw-body hw-shape-sidebar">
+          <aside class="hw-top">
+            <div class="hw-kpis">
+              <div class="hw-kpi" ods-aggregation="anteil" ods-aggregation-context="datactx"
+                   ods-aggregation-function="AVG" ods-aggregation-expression="zwg_3120">
+                <p class="hw-kpi-value">{{ anteil | number:1 }}%</p>
+                <p class="hw-kpi-label">Zweitwohnungsanteil {{ latest[0].jahr | moment:'YYYY' }}</p>
+              </div>
+              <div class="hw-kpi" ods-aggregation="wohnungen" ods-aggregation-context="datactx"
+                   ods-aggregation-function="SUM" ods-aggregation-expression="zwg_3150">
+                <p class="hw-kpi-value">{{ wohnungen | number:0 }}</p>
+                <p class="hw-kpi-label">Wohnungen insgesamt</p>
+              </div>
+            </div>
+            <div class="hw-filters">
+              <div class="hw-filter" ods-facet-results="gemeinden" ods-facet-results-context="datactx"
+                   ods-facet-results-facet-name="name" ods-facet-results-sort="alphanum">
+                <p class="hw-filter-label">Gemeinde</p>
+                <span hidden>{{ trendctx.parameters['refine.name'] = datactx.parameters['refine.name']; '' }}</span>
+                <span hidden>{{ compctx.parameters['refine.gemeinde_name'] = datactx.parameters['refine.name']; '' }}</span>
+                <ods-select options="gemeinden" selected-values="datactx.parameters['refine.name']"
+                    label-modifier="name" value-modifier="name"
+                    placeholder="Alle Gemeinden"></ods-select>
+              </div>
+            </div>
+          </aside>
+          <section class="hw-main">
+            <div class="hw-card">
+              <ods-simple-tabs>
+                <ods-simple-tab label="Logiernächte">
+                  <div ods-results="treffer" ods-results-context="compctx" ods-results-max="1">
+                    <div class="hw-chart-area" ng-if="treffer.length">
+                      <ods-chart timescale="month">
+                        <ods-chart-query context="compctx" field-x="datum" timescale="month" maxpoints="0">
+                          <ods-chart-serie chart-type="column" function-y="SUM" expression-y="logiernachte" label-y="Logiernächte" color="#2D2D8A"></ods-chart-serie>
+                        </ods-chart-query>
+                      </ods-chart>
+                    </div>
+                    <div class="hw-chart-area" ng-if="!treffer || treffer.length === 0">
+                      <div class="hw-empty">Keine Daten für diese Auswahl</div>
+                    </div>
+                  </div>
+                </ods-simple-tab>
+                <ods-simple-tab label="Karte">
+                  <div class="hw-gradient" ods-color-gradient="gradient"
+                       ods-color-gradient-context="mapctx"
+                       ods-color-gradient-x="bfs_nummer"
+                       ods-color-gradient-serie="AVG(zwg_3120)"
+                       ods-color-gradient-low="#E7E7F2"
+                       ods-color-gradient-high="#2D2D8A"
+                       ods-color-gradient-pow-exponent="1">
+                    <div class="hw-map-area">
+                      <ods-map location="8,46.75,9.6" scroll-wheel-zoom="false" toolbar-geolocation="false" toolbar-drawing="false" display-legend="false">
+                        <ods-map-layer context="geoctx" display="categories"
+                            color-categories="gradient['colors']" color-by-field="bfs_nummer"
+                            color-categories-other="#D9D9D6"
+                            border-color="#FFFFFF" shape-opacity="1" tooltip-disabled="true"></ods-map-layer>
+                      </ods-map>
+                      <div class="hw-map-legend">
+                        <ods-legend color-gradient="gradient" title="Zweitwohnungsanteil in %" no-value-color="#D9D9D6" decimal-precision="0"></ods-legend>
+                      </div>
+                    </div>
+                  </div>
+                </ods-simple-tab>
+                <ods-simple-tab label="Zweitwohnungsanteil">
+                  <div class="hw-chart-area">
+                    <ods-chart timescale="year">
+                      <ods-chart-query context="trendctx" field-x="jahr" timescale="year" maxpoints="0">
+                        <ods-chart-serie chart-type="line" function-y="AVG" expression-y="zwg_3120" label-y="Zweitwohnungsanteil in %" color="#2D2D8A"></ods-chart-serie>
+                      </ods-chart-query>
+                    </ods-chart>
+                  </div>
+                </ods-simple-tab>
+              </ods-simple-tabs>
+            </div>
+          </section>
+        </div>
+        <div class="hw-footer">
+          <span class="hw-footer-updated">Letzte Aktualisierung: {{ datactx.dataset.metas.data_processed | date:'dd.MM.yyyy' }}</span>
+          <a href="https://data.gr.ch/explore/dataset/dvs_awt_soci_20260112/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: Zweitwohnungsanteil</a>
+          <a href="https://data.gr.ch/explore/dataset/dvs_awt_econ_20250203/?flg=de-ch" target="_blank" rel="noopener noreferrer">Quelle: Beherbergung</a>
+        </div>
+      </ods-dataset-context>
+    </div>
+  </ods-dataset-context>
+</div>

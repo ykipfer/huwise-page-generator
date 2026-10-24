@@ -4,11 +4,13 @@
 // - the closed Widget list and the banned habits, read from ../references/ so that knowledge and lint
 //   never drift apart.
 // - the layout rules (layout-lint.mjs): footer, fixed-height parents, fixed widths.
+// - the Companion Dataset rules (companion-lint.mjs): footer names both datasets, no values combined across them.
 // - warnings (never fail a Page): attributes on a listed Widget that its family file does not document.
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseFragment } from 'parse5';
 import { lintLayout } from './layout-lint.mjs';
+import { lintCompanion } from './companion-lint.mjs';
 
 const REFERENCES = path.join(import.meta.dirname, '..', 'references');
 const reference = file => JSON.parse(fs.readFileSync(path.join(REFERENCES, file), 'utf8'));
@@ -303,5 +305,5 @@ const unique = findings => [...new Map(findings.map(f =>
 
 export function lint({ html, css }) {
   const doc = parseFragment(html, { sourceCodeLocationInfo: true });
-  return unique([...lintHtml(html, doc), ...lintCss(css), ...lintLayout({ doc, css })]);
+  return unique([...lintHtml(html, doc), ...lintCss(css), ...lintLayout({ doc, css }), ...lintCompanion({ doc })]);
 }

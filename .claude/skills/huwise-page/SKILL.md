@@ -11,7 +11,7 @@ Builds a Huwise **Page** (HTML + CSS, no JS) for data.gr.ch from a **Page Reques
 
 - **Dataset ID** (required) and a **German prompt** (required).
 - **Target Height** in px, default **800**. **Embed Size** Klein or Gross, default **Gross**. An explicit **title**, off by default (the Embed Caption carries it).
-- At most one Companion Dataset.
+- At most one Companion Dataset (procedure: `references/companion-dataset.md`; shared dimension check: `verifier/intake.mjs shared`).
 
 Ask for nothing else. If the dataset ID or prompt is missing, ask for it.
 
@@ -62,7 +62,7 @@ The closed lists (the Widget list, the Patterns and the Boundary Dataset catalog
 
 ## Files
 
-- `references/`: `core.md`, `rulebook.md`, `base-stylesheet.css`, `widgets/`, `patterns/`, `skeleton/` (static shapes for sketches; `skeleton/page/` is the complete skeleton Page, the starting point for a built Page), `boundary-catalogue.md`, `intake.md`, `page-sketch.md`.
+- `references/`: `core.md`, `rulebook.md`, `base-stylesheet.css`, `widgets/`, `patterns/`, `skeleton/` (static shapes for sketches; `skeleton/page/` is the complete skeleton Page, the starting point for a built Page), `boundary-catalogue.md`, `intake.md`, `page-sketch.md`, `companion-dataset.md`.
 - `verifier/`: `verify.mjs` (staged check), `intake.mjs`, `preview.mjs`, `handoff.mjs`. Run `npm install` and `npx playwright install chromium` there once.
 - Optional API key: set the environment variable `HUWISE_APIKEY` to a data.gr.ch API key for a higher request limit than anonymous access. The verifier (dry-run, render, `intake.mjs`) then sends it as `Authorization: Apikey <key>`, only to the `data.gr.ch` host and only for `/api/` paths, never to other hosts. Without it nothing changes. Keep the key in the environment only: never in a file, report, fixture or commit.
 - `benchmark/`: the six fixed Page Requests.

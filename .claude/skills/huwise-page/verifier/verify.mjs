@@ -46,6 +46,8 @@ function markdown(report) {
       const s = report.stages[key];
       return `- ${label}: ${s.status}${s.reason ? ` (${s.reason})` : ''}`;
     }),
+    ...(report.stages.dryRun.datasets?.length
+      ? [`- Dry-run datasets: ${report.stages.dryRun.datasets.map(d => `${d.context} ${d.dataset}`).join(', ')}`] : []),
     `- API requests: ${report.apiRequests}`,
     '',
   ];
@@ -92,7 +94,7 @@ if (hasErrors(findings)) {
   const dry = await dryRun({ html });
   findings.push(...dry.findings);
   apiRequests = dry.apiRequests;
-  stages.dryRun = { status: stageStatus(dry.findings), apiRequests };
+  stages.dryRun = { status: stageStatus(dry.findings), apiRequests, datasets: dry.datasets };
 }
 const outDir = path.join(pageDir, 'verifier-output');
 fs.rmSync(outDir, { recursive: true, force: true });

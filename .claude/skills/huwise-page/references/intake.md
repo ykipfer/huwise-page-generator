@@ -47,4 +47,4 @@ If any Visualization is a map, or the prompt names a spatial level, match the da
 
 ## 6. Companion Dataset
 
-Run steps 2 and 3 for the Companion Dataset too. Then check that the two datasets **share a dimension** (the same Gemeinde key, the same year, a common category). Only a shared dimension allows shared filters (one-way copy, Pattern 4). If they share none, tell the owner and propose no shared filter. Values are never combined across the datasets.
+Run steps 2 and 3 for the Companion Dataset too. Then check that the two datasets **share a dimension** (the same Gemeinde key, the same year, a common category): `node intake.mjs shared <main-id> <companion-id> [mainField=companionField ...]` compares the values of candidate field pairs as strings and reports the common values. Only a shared dimension allows shared filters (one-way copy, Pattern 4). If they share none, tell the owner and propose no shared filter. Values are never combined across the datasets. The full procedure (sketch, build, footer, verify) is in `companion-dataset.md`.

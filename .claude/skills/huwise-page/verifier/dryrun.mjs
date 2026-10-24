@@ -399,5 +399,6 @@ export async function dryRun({ html, fetchJson = defaultFetchJson }) {
   } catch (err) {
     findings.push(finding('dry-run-unreachable', { startLine: 1, startCol: 1 }, `data.gr.ch could not be reached: ${err.message}`));
   }
-  return { findings, apiRequests };
+  // Every context is checked against its own dataset, so a Companion Dataset (compctx) is covered like the main one.
+  return { findings, apiRequests, datasets: [...datasets].map(([context, { id }]) => ({ context, dataset: id })) };
 }

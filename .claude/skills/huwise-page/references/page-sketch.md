@@ -55,6 +55,8 @@ Then, below the table: proposed **slug**, **Target Height**, **Embed Size** (and
 4. **historical-state map request**: the prompt wants a map for past periods. Maps show only periods matching the catalogue snapshot (municipality mergers), so the history goes into a chart or table next to a current-state map.
 5. **values combined across datasets** (for example Logiernächte geteilt durch Einwohner): never combined, shown side by side instead.
 
+With a Companion Dataset, `companion-dataset.md` applies: its own area, the shared filters (only on a shared dimension found by `intake.mjs shared`), flags 2 and 5, and the footer naming both datasets.
+
 In benchmark mode, flags are recorded and not acted on.
 
 ### The 15 Patterns (names for the plan list)

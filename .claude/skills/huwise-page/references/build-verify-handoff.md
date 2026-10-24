@@ -17,6 +17,8 @@ The approved sketch markup in `pages/<slug>/index.html` **becomes the Page**. Ed
 
 Dry-run every literal ODSQL query through the MCP's `get_records` before writing it into the Page (`core.md`), so the verifier's dry-run does not find it first.
 
+**Companion Dataset.** When the Page Request names one: its own context `compctx` and Visualizations, one Pattern 4 copy per shared filter, a footer linking both datasets, never a value combined across them. See `companion-dataset.md`.
+
 ## Step 6: verify
 
 The verifier is staged: lint, then dry-run (data), then render in an iframe at the Target Height, then **your** screenshot review. A stage runs only when the earlier ones are clean. A full run costs about 30 anonymous API requests (the dry-run's), so use the budget on fixes, not on blind retries.
