@@ -357,6 +357,16 @@
     --hw-filter-h: 48px;
     --hw-title-h: 40px;
   }
+  /* The top block (KPI rows and filter rows) is as tall as the Page really needs, so no blank band is left above the card.
+     --hw-kr and --hw-fr count the KPI rows and filter rows. Without :has() support the selectors below are dropped
+     and the worst case of the media query stays (the budget is then too high, never too low). */
+  .hw-page .hw-body { --hw-kr: 1; --hw-fr: 1; }
+  .hw-page .hw-body:not(:has(.hw-kpis > :first-child)) { --hw-kr: 0; }
+  .hw-page .hw-body:not(:has(.hw-filters > :first-child)) { --hw-fr: 0; }
+  .hw-page .hw-body {
+    --hw-top-h: calc(var(--hw-kr) * var(--hw-kpi-h) + var(--hw-fr) * var(--hw-filter-h)
+      + (max(var(--hw-kr) - 1, 0) + max(var(--hw-fr) - 1, 0) + min(var(--hw-kr), 1) * min(var(--hw-fr), 1)) * var(--hw-gap));
+  }
   .hw-page .hw-shape-sidebar { --hw-above: calc(var(--hw-top-h) + var(--hw-gap)); flex-direction: column; align-items: stretch; }
   .hw-page .hw-body { --hw-above: calc(var(--hw-top-h) + var(--hw-gap)); }
   .hw-page .hw-shape-sidebar .hw-top,
@@ -379,7 +389,13 @@
 
 /* Below 480px: KPI tiles compact and two per row, filters full width */
 @media (max-width: 479px) {
-  .hw-page { --hw-top-h: calc(2 * var(--hw-kpi-h) + 2 * var(--hw-filter-h) + 3 * var(--hw-gap)); }
+  /* Two KPI tiles per row (3 or 4 tiles take 2 rows) and one filter per row. */
+  .hw-page .hw-body { --hw-kr: 2; --hw-fr: 2; }
+  .hw-page .hw-body:not(:has(.hw-kpis > :nth-child(3))) { --hw-kr: 1; }
+  .hw-page .hw-body:not(:has(.hw-kpis > :first-child)) { --hw-kr: 0; }
+  .hw-page .hw-body:not(:has(.hw-filters > :nth-child(2))) { --hw-fr: 1; }
+  .hw-page .hw-body:not(:has(.hw-filters > :first-child)) { --hw-fr: 0; }
+  .hw-page .hw-body:has(.hw-filters > :nth-child(3)) { --hw-fr: 3; }
   .hw-page .hw-shape-sidebar .hw-kpis,
   .hw-page .hw-shape-grid .hw-kpis,
   .hw-page .hw-shape-single .hw-kpis { grid-template-columns: repeat(2, 1fr); }
