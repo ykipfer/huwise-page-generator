@@ -107,6 +107,28 @@ test('worse = pass to fail, a lower rubric total or more iterations; the first w
   assert.match(c.rows.find(r => r.slug === 'arbeitsmarkt-seit-1993').worse.join(';'), /iterations/);
 });
 
+test('worse is judged per criterion: a drop in one is not offset by a gain in another', () => {
+  const file = acceptedBaseline({ zweitwohnungsanteil: { scores: score(2, 1, 2) } });
+  const row = compareRun({ runDir: makeRun({ zweitwohnungsanteil: { scores: score(1, 2, 2) } }), baselineFile: file, schemas: schemasFor() }).rows[0];
+  assert.equal(row.status, 'needs-rerun', 'same total 5, but fidelity 2 to 1');
+  assert.deepEqual(row.worse, ['Request fidelity 2 to 1']);
+  const better = compareRun({ runDir: makeRun({ zweitwohnungsanteil: { scores: score(2, 2, 2) } }), baselineFile: file, schemas: schemasFor() }).rows[0];
+  assert.equal(better.status, 'ok');
+});
+
+test('rows whose scores the owner has not confirmed are flagged, in the first run and the re-run', () => {
+  const file = acceptedBaseline();
+  const first = makeRun({ zweitwohnungsanteil: { scores: score(0, 2, 2) }, 'arbeitsmarkt-seit-1993': {} }, { confirm: false });
+  const c = compareRun({ runDir: first, baselineFile: file, schemas: schemasFor() });
+  assert.ok(c.rows.every(r => r.unconfirmed === true));
+  assert.match(fs.readFileSync(path.join(first, 'comparison.md'), 'utf8'), /not confirmed/i);
+  const rerun = makeRun({ zweitwohnungsanteil: { scores: score(0, 2, 2) } }, { confirm: false });
+  const again = compareRun({ runDir: first, rerunDir: rerun, baselineFile: file, schemas: schemasFor() });
+  assert.equal(again.rows.find(r => r.slug === 'zweitwohnungsanteil').unconfirmed, true);
+  const confirmed = compareRun({ runDir: makeRun({ zweitwohnungsanteil: {} }), baselineFile: file, schemas: schemasFor() });
+  assert.equal(confirmed.rows[0].unconfirmed, false);
+});
+
 test('worse again on the re-run is a regression; both runs are recorded', () => {
   const file = acceptedBaseline();
   const first = makeRun({ zweitwohnungsanteil: { scores: score(0, 2, 2) } });

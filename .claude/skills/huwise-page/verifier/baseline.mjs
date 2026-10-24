@@ -61,11 +61,11 @@ export function acceptBaseline({ runDir, schemas, baselineFile, date = new Date(
   return baseline;
 }
 
-/** Why `cur` is worse than the Baseline row `base` (empty when it is not). */
+/** Why `cur` is worse than the Baseline row `base` (empty when it is not): judged per criterion, so a gain in one does not offset a drop in another. */
 function worseReasons(base, cur) {
   const out = [];
   if (base.pass && !cur.pass) out.push('pass to fail');
-  if (cur.total < base.total) out.push(`rubric total ${base.total} to ${cur.total}`);
+  for (const { key, label } of CRITERIA) if (cur.scores[key] < base.scores[key]) out.push(`${label} ${base.scores[key]} to ${cur.scores[key]}`);
   if (cur.iterations > base.iterations) out.push(`iterations ${base.iterations} to ${cur.iterations}`);
   return out;
 }
@@ -90,7 +90,7 @@ function datasetChanges(slug, row, schemas) {
 }
 
 /**
- * Compare the recorded requests of a run with the Baseline. Statuses: ok, needs-rerun (worse once: re-run it exactly once),
+ * Compare the recorded requests of a run with the Baseline. Rows whose scores (or re-run scores) the owner has not confirmed are flagged `unconfirmed`. Statuses: ok, needs-rerun (worse once: re-run it exactly once),
  * regression (worse again on the re-run), not-reproduced (worse once, fine on the re-run), dataset-changed (never a regression), new.
  * Writes comparison.json and comparison.md into the run folder. The Baseline file is only read.
  */
@@ -128,28 +128,30 @@ export function compareRun({ runDir, rerunDir, baselineFile, schemas, proposals 
     }
     rows.push(row);
   }
+  for (const row of rows) row.unconfirmed = !loadResult(runDir, row.slug).confirmed || (!!row.rerunDir && !loadResult(row.rerunDir, row.slug).confirmed);
   const comparison = { run: path.basename(runDir), baselineFrom: baseline.acceptedFrom, rows };
   writeJson(savedFile, comparison);
   fs.writeFileSync(path.join(runDir, 'comparison.md'), comparisonMarkdown(comparison));
   return comparison;
 }
 
+const flag = r => (r.unconfirmed ? ' [scores not confirmed by the owner]' : '');
 const line = s => `${s.pass ? 'pass' : 'fail'}, ${s.iterations} iteration(s), rubric ${s.total}/6, ${s.warnings} warning(s)`;
 
 export function comparisonMarkdown({ run, baselineFrom, rows }) {
   const section = (title, items) => items.length ? [`## ${title}`, '', ...items.flat(), ''] : [];
   const by = (...s) => rows.filter(r => s.includes(r.status));
   return [
-    `# Comparison with the Baseline: ${run}`, '', `Baseline from run ${baselineFrom}. Regression = worse than the Baseline on a re-run too (pass to fail, lower rubric total, more iterations).`, '',
-    ...section('Regressions', by('regression').map(r => [`- **${r.slug}**: first run ${line(r.first)}; re-run ${line(r.rerun)}; Baseline ${line(r.baseline)}. Worse: ${r.rerunWorse.join(', ')}.`])),
-    ...section('Re-run needed (worse once; re-run exactly once)', by('needs-rerun').map(r => [`- **${r.slug}**: ${line(r.first)} against Baseline ${line(r.baseline)}. Worse: ${r.worse.join(', ')}.`])),
-    ...section('Not reproduced on the re-run (not a regression)', by('not-reproduced').map(r => [`- **${r.slug}**: first run worse (${r.worse.join(', ')}); re-run ${line(r.rerun)}.`])),
+    `# Comparison with the Baseline: ${run}`, '', `Baseline from run ${baselineFrom}. Regression = worse than the Baseline on a re-run too (pass to fail, a lower score on any rubric criterion, more iterations).`, '',
+    ...section('Regressions', by('regression').map(r => [`- **${r.slug}**: first run ${line(r.first)}; re-run ${line(r.rerun)}; Baseline ${line(r.baseline)}. Worse: ${r.rerunWorse.join(', ')}.${flag(r)}`])),
+    ...section('Re-run needed (worse once; re-run exactly once)', by('needs-rerun').map(r => [`- **${r.slug}**: ${line(r.first)} against Baseline ${line(r.baseline)}. Worse: ${r.worse.join(', ')}.${flag(r)}`])),
+    ...section('Not reproduced on the re-run (not a regression)', by('not-reproduced').map(r => [`- **${r.slug}**: first run worse (${r.worse.join(', ')}); re-run ${line(r.rerun)}.${flag(r)}`])),
     ...section('Dataset changed (not a regression)', by('dataset-changed').map(r => [
-      `- **${r.slug}**: ${r.changes.join('; ')}.`,
+      `- **${r.slug}**: ${r.changes.join('; ')}.${flag(r)}`,
       r.proposal ? `  - Proposed replacement: ${r.proposal.dataset}${r.proposal.note ? ` (${r.proposal.note})` : ''}. When the owner accepts it: update the request file, re-run it, then \`baseline.mjs reset\`.` : '  - No replacement proposed yet.',
     ])),
-    ...section('Unchanged or better', by('ok').map(r => [`- ${r.slug}: ${line(r.first)}${r.baseline.note ? ` (Baseline note: ${r.baseline.note})` : ''}`])),
-    ...section('Not in the Baseline', by('new').map(r => [`- ${r.slug}`])),
+    ...section('Unchanged or better', by('ok').map(r => [`- ${r.slug}: ${line(r.first)}${r.baseline.note ? ` (Baseline note: ${r.baseline.note})` : ''}${flag(r)}`])),
+    ...section('Not in the Baseline', by('new').map(r => [`- ${r.slug}${flag(r)}`])),
   ].join('\n') + '\n';
 }
 
