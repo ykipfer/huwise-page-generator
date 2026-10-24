@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { withApiKey } from '../apikey.mjs';
 
 const here = import.meta.dirname;
 const CLI = path.join(here, '..', 'verify.mjs');
@@ -264,7 +265,8 @@ test('boundary-catalogue.md lists every entry with its dataset, key field and na
 
 test('every catalogue entry matches data.gr.ch: record count, key field and type, name field', async () => {
   for (const e of catalogue) {
-    const res = await fetch(`https://data.gr.ch/api/explore/v2.1/catalog/datasets/${e.dataset}`);
+    const url = `https://data.gr.ch/api/explore/v2.1/catalog/datasets/${e.dataset}`;
+    const res = await fetch(url, { headers: withApiKey(url) });
     assert.equal(res.status, 200, `${e.dataset} not readable`);
     const meta = await res.json();
     const field = n => meta.fields.find(f => f.name === n);
