@@ -203,6 +203,20 @@ test('a map under 280px fails with exactly that finding', () => {
   assert.match(r.report.findings[0].message, /200px/);
 });
 
+test('a chart under 240px fails with exactly that finding', () => {
+  const r = run('render-chart-too-small', ['--iterate'], { withBase: true });
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['chart-too-small', 'error']]);
+  assert.match(r.report.findings[0].message, /minimum is 240px/);
+});
+
+test('a table area under 200px fails with exactly that finding', () => {
+  const r = run('render-table-area-too-small', ['--iterate']);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.deepEqual(summary(r.report), [['table-area-too-small', 'error']]);
+  assert.match(r.report.findings[0].message, /120px/);
+});
+
 test('boundary shapes without data render in the "other" grey without an error', () => {
   const r = run('render-map-shapes-without-data', ['--iterate']);
   assert.equal(r.status, 0, r.stdout + r.stderr);

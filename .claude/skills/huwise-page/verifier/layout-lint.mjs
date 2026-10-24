@@ -1,10 +1,11 @@
-// Layout lint, no network (ADR 0002). Three rules, driven by ../references/base-stylesheet.json and
+// Layout lint, no network (ADR 0002). Four rules, driven by ../references/base-stylesheet.json and
 // scroll-containers.json:
 // - missing-footer: no element carries the footer marker class (Pattern 15 is mandatory).
 // - no-fixed-height: an ods-chart / ods-map whose parent has no explicit fixed height. Fixed means the
 //   parent carries a base-stylesheet area class, an inline `height` in px / calc() / max() / min() /
 //   clamp() / var(), or a Page CSS rule that declares such a height and whose selector matches it.
 //   The cascade is not resolved: a matching declaration is enough.
+// - kpi-tile-cap: more than 4 elements with the KPI tile class (story 58).
 // - fixed-width-too-wide: `width` or `min-width` above 375px in px on a content element, in inline
 //   styles or in CSS rules (max-width is always fine). Elements inside a scroll container (the table
 //   wrapper, the tab bar) are exempt, so a wide table can scroll there.
@@ -112,6 +113,14 @@ export function lintLayout({ doc, css }) {
   if (!els.some(el => classesOf(el).includes(BASE.footerClass)))
     findings.push(finding('missing-footer', 'index.html', 1, 1,
       `The Page has no footer: no element carries the class "${BASE.footerClass}" (Pattern 15, mandatory on every Page)`));
+
+  // kpi-tile-cap: at most BASE.maxKpiTiles tiles; the first tile over the cap is reported
+  const tiles = els.filter(el => classesOf(el).includes(BASE.kpiClass));
+  if (tiles.length > BASE.maxKpiTiles) {
+    const loc = tiles[BASE.maxKpiTiles].sourceCodeLocation;
+    findings.push(finding('kpi-tile-cap', 'index.html', loc.startLine, loc.startCol,
+      `The Page has ${tiles.length} KPI tiles (class "${BASE.kpiClass}"); at most ${BASE.maxKpiTiles} fit the height budget`));
+  }
 
   // no-fixed-height
   const hasFixedHeight = el =>

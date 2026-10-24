@@ -72,6 +72,11 @@ function undocumentedWidgetAttrs(el, ignored) {
   }).map(n => n.raw);
 }
 
+// The editor lets Widgets carry on* attributes (on-change). A Widget is an ods-* tag or an element
+// carrying an ods-* attribute (attribute form, also data-/x- prefixed). Any other element's attribute
+// starting with "on" is refused: the page-editor probe saw the editor refuse "any attribute starting with on".
+const isWidgetElement = el => el.tagName.startsWith('ods-') || el.attrs.some(a => /^(data-|x-)?ods-/.test(a.name));
+
 const REFUSED_TAGS = ['style', 'script', 'form', 'object', 'iframe'];
 
 const finding = (rule, file, loc, message, severity = 'error') => ({
@@ -158,6 +163,27 @@ function bannedInText(html, doc, findings) {
 }
 
 const attr = (el, name) => el.attrs?.find(a => a.name === name)?.value;
+
+// `expression` habits: matched only where AngularJS evaluates code, so display text stays free: inside
+// {{ … }} (in text and in any attribute value) and in the value of an ng-* attribute. Prose such as
+// "Stand 01.01.2025" or "weniger als < 2000 Einwohner" is not an expression.
+function bannedInExpressions(html, doc, findings) {
+  const run = (code, loc) => {
+    for (const [habit, m] of matchers('expression'))
+      if (new RegExp(m.expression).test(code)) findings.push(habitFinding(habit, 'index.html', loc));
+  };
+  for (const node of textNodes(doc)) {
+    const loc = node.sourceCodeLocation;
+    const raw = html.slice(loc.startOffset, loc.endOffset);
+    for (const m of raw.matchAll(/\{\{([\s\S]*?)\}\}/g)) run(m[1], locate(loc, raw, m.index));
+  }
+  for (const el of elements(doc))
+    for (const { name, value } of el.attrs) {
+      const loc = el.sourceCodeLocation.attrs?.[name] ?? el.sourceCodeLocation;
+      if (/^(data-|x-)?ng-/.test(name)) run(value, loc);
+      else for (const m of value.matchAll(/\{\{([\s\S]*?)\}\}/g)) run(m[1], loc);
+    }
+}
 
 // `repeatWithoutMax` habits: ng-repeat="row in rows" under (or on) the element that defines rows.
 function bannedRepeats(doc, findings) {
@@ -247,6 +273,7 @@ function sideEffects(html, doc, findings) {
 function lintHtml(html, doc) {
   const findings = [];
   bannedInText(html, doc, findings);
+  bannedInExpressions(html, doc, findings);
   bannedRepeats(doc, findings);
   bannedTabs(doc, findings);
   sideEffects(html, doc, findings);
@@ -271,7 +298,7 @@ function lintHtml(html, doc) {
         `"${name}" is not documented in the Widget family file (references/widgets/). It may still work; check the ods-widgets source before relying on it`, 'warning'));
     for (const { name, value } of el.attrs) {
       const attrLoc = loc.attrs?.[name] ?? loc;
-      if (/^on/.test(name) && !el.tagName.startsWith('ods-'))
+      if (/^on/.test(name) && !isWidgetElement(el))
         findings.push(finding('refused-on-attribute', 'index.html', attrLoc, `"${name}" on <${el.tagName}> is refused by the Huwise editor (only ods-* Widgets may carry on* attributes)`));
       // eslint-disable-next-line no-control-regex
       if (/^javascript:/i.test(value.replace(/[\u0000- ]/g, '')))

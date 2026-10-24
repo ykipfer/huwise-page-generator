@@ -172,6 +172,7 @@ Exact value-to-colour maps:
 - **Charts:** `category-colors="{'Kultur': '#2D2D8A', 'Sport': '#E69F00'}"` on `ods-chart-query`. It is evaluated as an expression (`highcharts.js:2194,2233`) and keyed by the x value, or by the breakdown value with `series-breakdown` (`highcharts.js:639,1382`).
 - **Maps:** `color-categories` + `color-by-field` on `ods-map-layer display="categories"`, plus `color-categories-other` for shapes without data (`map.js:1445-1452`). A choropleth feeds them from `ods-color-gradient`: `color-categories="colors['colors']"`, with `ods-color-gradient-low="#E7E7F2"` and `ods-color-gradient-high="#2D2D8A"`. Choose the exponent per dataset.
 - Keys must be **exactly** the field's real values; a missing key silently falls back to the default palette. The dry-run stage checks this.
+- `ods-legend` carries no value-to-colour map: it reads only an `ods-color-gradient` object (value ranges, `legend.js:13`), so there is nothing for the dry-run to check on it.
 
 CI order for categories: `#2D2D8A, #E69F00, #009E73, #56B4E9, #CC79A7, #0072B2, #D55E00`. Use `#6B6B6B` for "Übrige/Andere" where a Visualization can draw such a value (a map's `color-categories-other`). A **stacked chart** with more than 7 categories shows the 7 largest only and the rest goes into a KPI (Pattern 6); it has no "Übrige" series. Red is never a category colour. Status colours are for real ratings only.
 

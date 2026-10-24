@@ -7,8 +7,11 @@ import { chromium } from 'playwright';
 import { annotate } from './annotate.mjs';
 import { routeApiKey } from './apikey.mjs';
 
-const PORTAL = 'https://data.gr.ch';
-const LIVE_PAGE = `${PORTAL}/pages/mittelverwendung-im-bereich-landeslotterie/?headless=true&flg=de-ch`;
+const PORTAL_ORIGIN = 'https://data.gr.ch';
+const PLATFORM_SCRAPE_PAGE = `${PORTAL_ORIGIN}/pages/mittelverwendung-im-bereich-landeslotterie/?headless=true&flg=de-ch`;
+// The base stylesheet's table area class (references/base-stylesheet.json): its 200px minimum is checked.
+const TABLE_AREA_CLASS = 'hw-table-area';
+const SCRAPE_HEADERS = { 'User-Agent': 'Mozilla/5.0' };
 const DAY = 864e5;
 const here = import.meta.dirname;
 const SETTLE_QUIET_MS = 1500;
@@ -65,8 +68,8 @@ export async function platformConfig() {
     const c = JSON.parse(fs.readFileSync(file, 'utf8'));
     if (Date.now() - c.fetchedAt < DAY) return { ...c, source: 'cache' };
   } catch {}
-  const res = await fetch(LIVE_PAGE, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  if (!res.ok) throw new Error(`platform scrape: ${LIVE_PAGE} answered ${res.status}`);
+  const res = await fetch(PLATFORM_SCRAPE_PAGE, { headers: SCRAPE_HEADERS });
+  if (!res.ok) throw new Error(`platform scrape: ${PLATFORM_SCRAPE_PAGE} answered ${res.status}`);
   const c = { fetchedAt: Date.now(), ...parsePlatform(await res.text()) };
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(file, JSON.stringify(c));
@@ -88,7 +91,7 @@ ${cfg.links.join('\n')}
   angular.module('harness', ['ods-widgets', 'ngSanitize'])
     .config(function (ODSWidgetsConfigProvider) {
       ODSWidgetsConfigProvider.setConfig(${cfg.widgetsConfig});
-      ODSWidgetsConfigProvider.setConfig({ defaultDomain: '${PORTAL}', secureContextDomain: false, basePath: '/ods-widgets/dist/',
+      ODSWidgetsConfigProvider.setConfig({ defaultDomain: '${PORTAL_ORIGIN}', secureContextDomain: false, basePath: '/ods-widgets/dist/',
         customAPIHeaders: { 'ODS-API-Analytics-App': 'page-verifier' } });
     })
     .run(function (gettextCatalog) {
@@ -113,7 +116,7 @@ export function serve(harness, dist) {
   const proxy = async (u, res) => {
     const key = u.pathname + u.search;
     if (!cache.has(key)) {
-      const r = await fetch(PORTAL + key, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const r = await fetch(PORTAL_ORIGIN + key, { headers: SCRAPE_HEADERS });
       cache.set(key, { status: r.status, type: r.headers.get('content-type'), body: Buffer.from(await r.arrayBuffer()) });
     }
     const c = cache.get(key);
@@ -145,7 +148,7 @@ export function serve(harness, dist) {
 }
 
 // runs inside the iframe
-const inspectFrame = ({ allowed, chartIds, mapIds, repeats, guarded }) => {
+const inspectFrame = ({ allowed, chartIds, mapIds, tableIds, tableAreaClass, repeats, guarded }) => {
   const label = el => el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
   const W = document.documentElement.clientWidth;
   // Content height: the lowest edge inside the Page plus the portal wrapper's bottom margin. The wrapper's
@@ -194,12 +197,30 @@ const inspectFrame = ({ allowed, chartIds, mapIds, repeats, guarded }) => {
       else if (typeof v === 'number' && Number.isNaN(v)) out.signals.push({ rule: 'widget-variable', message: `Widget variable "${name}" (${where}) is NaN` });
     }
   }
-  // a chart without points
+  // a chart without points, or under the 240px minimum
+  const CHART_MIN = 240;
+  const TABLE_MIN = 200;
   for (const id of chartIds) {
     for (const el of document.querySelectorAll(`[data-verify-id="${id}"]`)) {
       if (!el.querySelector('.highcharts-container')) out.signals.push({ rule: 'chart-no-points', message: 'A chart was not drawn (no Highcharts container)' });
       else if (el.querySelector('.highcharts-no-data') || !el.querySelector('.highcharts-point, .highcharts-graph, .highcharts-series path'))
         out.signals.push({ rule: 'chart-no-points', message: 'A chart is drawn without points' });
+      else {
+        // the room the chart has: its own box or the area it sits in, whichever is smaller (Highcharts keeps
+        // its 400px default container height when the area is smaller; the overflow is then clipped or overlaps)
+        const h = Math.round(Math.min(el.getBoundingClientRect().height, el.parentElement.getBoundingClientRect().height));
+        if (h < CHART_MIN) out.signals.push({ rule: 'chart-too-small', message: `A chart is ${h}px high; the minimum is ${CHART_MIN}px` });
+      }
+    }
+  }
+  // a table area under the 200px minimum: the base stylesheet's table area (visible ones only; a table in
+  // an unopened tab is measured once its tab is explored)
+  for (const id of tableIds) {
+    for (const el of document.querySelectorAll(`[data-verify-id="${id}"]`)) {
+      const area = el.closest(`.${tableAreaClass}`);
+      if (!area || !area.getClientRects().length) continue;
+      const h = Math.round(area.getBoundingClientRect().height);
+      if (h < TABLE_MIN) out.signals.push({ rule: 'table-area-too-small', message: `A table area is ${h}px high; the minimum is ${TABLE_MIN}px` });
     }
   }
   // a map that shows no features, or is under the 280px minimum
@@ -326,6 +347,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
   const guarded = emptyGuards(html);
   const chartIds = entries.filter(([, e]) => e.kind === 'ods-chart').map(([id]) => id);
   const mapIds = entries.filter(([, e]) => e.kind === 'ods-map').map(([id]) => id);
+  const tableIds = entries.filter(([, e]) => e.kind === 'ods-table').map(([id]) => id);
   const server = await serve(harnessHtml(cfg, marked.html, css), findWidgetsDist());
   const browser = await chromium.launch();
   const perWidth = [];
@@ -345,7 +367,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
       page.on('requestfinished', done);
       page.on('requestfailed', done);
       page.on('response', async r => {
-        if (r.status() < 400 || !r.url().startsWith(PORTAL + '/api/')) return;
+        if (r.status() < 400 || !r.url().startsWith(PORTAL_ORIGIN + '/api/')) return;
         apiFailed.add(r.url());
         let msg = (await r.text().catch(() => '')).slice(0, 200);
         try { msg = JSON.parse(msg).message ?? msg; } catch {}
@@ -361,7 +383,7 @@ export async function render({ html, css, targetHeight, widths, outDir, scrollSe
       // settles, re-checks every signal, screenshots; returns nothing, records into perWidth and states
       const check = async label => {
         const settled = await settle(page, net, frame);
-        const r = await frame.evaluate(inspectFrame, { allowed: scrollSelectors, chartIds, mapIds, repeats: marked.repeats, guarded });
+        const r = await frame.evaluate(inspectFrame, { allowed: scrollSelectors, chartIds, mapIds, tableIds, tableAreaClass: TABLE_AREA_CLASS, repeats: marked.repeats, guarded });
         for (const id of r.present) seen.add(id);
         const state = states.get(label) ?? states.set(label, { label, index: states.size, rules: [] }).get(label);
         const shot = label === INITIAL ? `screenshot-${w}.png` : `state-${state.index}-${w}.png`;

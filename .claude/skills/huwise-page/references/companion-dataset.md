@@ -19,7 +19,7 @@ It lists candidate pairs (fields with the same name or the same German label, da
 
 - The sketch gets the Companion Dataset's **own area** (a tab or a card, a labelled placeholder as always, with the dataset named in the label) and, per shared dimension, **one shared filter**. Both datasets' real facet values are checked by the shared-dimension run, so the filter shows real values.
 - The **first tab** of the card should be the Companion Dataset's area when the Visualizations sit in tabs. The verifier explores the dropdown options before it clicks any tab, and a tab is rendered in the state the last option left: if that Gemeinde has no Companion rows, the guarded chart is never rendered and `widget-never-rendered` fails the Page. The first tab is rendered in the initial state, which has data.
-- The plan list names, in the existing flag rows: **second dataset needed** (the Companion Dataset, the shared dimension and its counts) and, when the prompt asks for a value built from both datasets (Logiernächte geteilt durch Einwohner, a ratio, a sum), the flag **values combined across datasets**: never combined, shown side by side instead, each value on its own context.
+- The plan list names, in the existing flag rows: **Companion Dataset needed** (the Companion Dataset, the shared dimension and its counts) and, when the prompt asks for a value built from both datasets (Logiernächte geteilt durch Einwohner, a ratio, a sum), the flag **values combined across datasets**: never combined, shown side by side instead, each value on its own context.
 - The plan list's **Pattern** column says "4 (copy from `datactx` to `compctx`)" for every shared filter.
 - The footer in the sketch already names both datasets.
 

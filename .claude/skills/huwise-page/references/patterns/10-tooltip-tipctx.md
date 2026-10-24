@@ -2,7 +2,7 @@
 
 ## Job
 
-Show values from a **second dataset** (or a different cut of the main one) in the tooltip of a map shape or point, looked up by the clicked record's key. The tooltip holds its own context, `tipctx`, nested inside the `ods-map-layer`.
+Show values from a **Companion Dataset** (or a different cut of the main one) in the tooltip of a map shape or point, looked up by the clicked record's key. The tooltip holds its own context, `tipctx`, nested inside the `ods-map-layer`.
 
 Instance Page (proven): `patterns/instances/10-tooltip-tipctx/`: the Pattern 9 choropleth of `dvs_awt_soci_20260112`, whose tooltip shows the Gemeinde's latest Zweitwohnungs- and Erstwohnungsanteil. It passes the verifier, which clicks a shape (explored state "map shape click") and checks the tooltip's Widget variables.
 

@@ -135,7 +135,7 @@ test('SKILL.md documents intake order, MCP fallback, source fallback, add step a
 
 test('the step references name every plan-list flag and the sketch rules', () => {
   const sketch = read('references', 'page-sketch.md');
-  for (const needle of ['missing Widget or Pattern', 'second dataset', 'content dropped', 'historical-state map', 'combined across datasets',
+  for (const needle of ['missing Widget or Pattern', 'Companion Dataset needed', 'Boundary Dataset needed', 'content dropped', 'historical-state map', 'combined across datasets',
     'Gemeinde', 'ODSQL', 'no API calls', 'no mock charts', 'hw-footer', 'hw-placeholder', 'German kebab-case', '720px', 'tabs'])
     assert.ok(sketch.toLowerCase().includes(needle.toLowerCase()), `page-sketch.md lacks: ${needle}`);
   const intake = read('references', 'intake.md');

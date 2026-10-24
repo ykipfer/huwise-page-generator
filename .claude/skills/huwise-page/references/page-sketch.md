@@ -50,7 +50,7 @@ Then, below the table: proposed **slug**, **Target Height**, **Embed Size** (and
 **Flags** (list only those that apply; each with one sentence):
 
 1. **missing Widget or Pattern**: the request needs something outside the closed Widget list or the 15 Patterns (a pie chart, a date-range filter, pagination, `refine-on-click`). It goes through the deliberate add step before the build.
-2. **second dataset needed**: a map or a Companion Dataset. Name the Boundary Dataset catalogue entry chosen (for a map at Gemeinde level: Gemeinde, `dvs_awt_regi_202502110`, joined `bfs_nummer` to the data's key, cast with `''+`) or the Companion Dataset and the shared dimension. The owner approves the join with the sketch.
+2. **Boundary Dataset needed: <entry>** (a map) or **Companion Dataset needed** (a second dataset of the owner's data). Name the Boundary Dataset catalogue entry chosen (for a map at Gemeinde level: Gemeinde, `dvs_awt_regi_202502110`, joined `bfs_nummer` to the data's key, cast with `''+`) or the Companion Dataset and the shared dimension. The owner approves the join with the sketch.
 3. **content dropped to fit the Target Height**: which tiles, filters or Visualizations were left out, and that a larger Target Height would bring them back.
 4. **historical-state map request**: the prompt wants a map for past periods. Maps show only periods matching the catalogue snapshot (municipality mergers), so the history goes into a chart or table next to a current-state map.
 5. **values combined across datasets** (for example Logiernächte geteilt durch Einwohner): never combined, shown side by side instead.

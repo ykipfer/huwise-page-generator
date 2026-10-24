@@ -8,7 +8,7 @@ All commands below run from the skill's `verifier/` folder (`node benchmark.mjs 
 
 - **No questions.** Never ask the owner anything. The Page Request comes from the request file (prompt exactly as written, dataset ID(s), Target Height 800, Embed Size Gross unless the file says otherwise).
 - **Auto-approve the first Page Sketch.** Build the sketch and run the sketch lint and preview as usual (open no browser: pass `--no-open` to `preview.mjs`), post the plan list into the run's notes, then treat the sketch as approved. **Keep it** right then: `node benchmark.mjs sketch <page-dir>` copies `index.html` and `stylesheet.css` into `<page-dir>/sketch/`. It is never overwritten, so the build cannot touch the copy that sketch fidelity is scored against.
-- **Plan-list flags are recorded, not acted on.** Where a normal run would stop for the owner (missing Widget or Pattern, second dataset, content dropped, historical-state map, values combined across datasets), take the closest Widget-only, Pattern-only route, do not run the deliberate add step, and write the flag into `flags` of the result.
+- **Plan-list flags are recorded, not acted on.** Where a normal run would stop for the owner (missing Widget or Pattern, Companion Dataset needed, Boundary Dataset needed, content dropped, historical-state map, values combined across datasets), take the closest Widget-only, Pattern-only route, do not run the deliberate add step, and write the flag into `flags` of the result.
 - **Run folder.** `node benchmark.mjs init [slug…]` makes the dated, gitignored run folder `benchmark/runs/<YYYY-MM-DD>/` (a second run on the same day becomes `<YYYY-MM-DD>-2`) with one Page folder per request, and prints the paths. Build and verify **in that Page folder** (`index.html`, `stylesheet.css`, `verifier-output/`). Nothing is written into the Pages directory (`pages/` at the repo root); `benchmark.mjs` refuses a run folder inside it, and `git status` after a run shows nothing new.
 - **Same build, verify and iteration rules** as `build-verify-handoff.md` steps 5 and 6: at most 3 iterations, final pass at every width. Skip the owner-facing handoff and the chat screenshots; the results replace them.
 
@@ -27,7 +27,7 @@ Run `node benchmark.mjs aid <page-dir>` before scoring sketch fidelity. It lists
 Write the scores into a JSON file outside the run folder's Page folders and record them:
 
 ```
-{ "iterations": 2, "flags": ["second dataset needed: Beherbergungsstatistik"],
+{ "iterations": 2, "flags": ["Companion Dataset needed: Beherbergungsstatistik"],
   "scores": { "fidelity": { "score": 2, "reason": "…" }, "ciLayout": { "score": 1, "reason": "…" }, "sketchFidelity": { "score": 2, "reason": "…" } } }
 ```
 

@@ -8,11 +8,11 @@ import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { WIDTHS } from './render.mjs';
 
-const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+const escAttr = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
 export function previewHtml({ html, css, targetHeight, embedSize }) {
   const frameDoc = `<!doctype html><html lang="de-ch"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;background:#fff}${css}\n.hw-page { --target-height: ${targetHeight}px; }</style></head><body>${html}</body></html>`;
-  const frames = WIDTHS[embedSize].map(w => `<figure><figcaption>${w}px</figcaption><iframe title="Page Sketch ${w}px" width="${w}" height="${targetHeight}" style="width:${w}px;height:${targetHeight}px" srcdoc="${esc(frameDoc)}"></iframe></figure>`).join('\n');
+  const frames = WIDTHS[embedSize].map(w => `<figure><figcaption>${w}px</figcaption><iframe title="Page Sketch ${w}px" width="${w}" height="${targetHeight}" style="width:${w}px;height:${targetHeight}px" srcdoc="${escAttr(frameDoc)}"></iframe></figure>`).join('\n');
   return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Page Sketch (${embedSize}, ${targetHeight}px)</title>
 <style>body{margin:16px;font:13px/1.4 sans-serif;background:#eee}.row{display:flex;gap:16px;align-items:flex-start}figure{margin:0;flex:none}figcaption{margin-bottom:4px;color:#555}iframe{border:0;outline:1px solid #bbb;background:#fff;display:block}</style></head>
 <body><p>Page Sketch, Embed Size ${embedSize}, Target Height ${targetHeight}px</p><div class="row">

@@ -73,12 +73,12 @@ test('recordResult writes result.json with flags, scores, iterations and warning
   fs.writeFileSync(path.join(dir, 'sketch', 'index.html'), '<div></div>');
   assert.throws(() => recordResult({ pageDir: dir, iterations: 1, flags: [], scores: { ...score(2, 2, 2), ciLayout: { score: 3, reason: 'x' } } }), /0, 1 or 2/);
   assert.throws(() => recordResult({ pageDir: dir, iterations: 1, flags: [], scores: { ...score(2, 2, 2), fidelity: { score: 2, reason: '' } } }), /reason/);
-  const r = recordResult({ pageDir: dir, iterations: 2, flags: ['second dataset needed: Beherbergungsstatistik'], scores: score(2, 1, 2) });
+  const r = recordResult({ pageDir: dir, iterations: 2, flags: ['Companion Dataset needed: Beherbergungsstatistik'], scores: score(2, 1, 2) });
   const saved = JSON.parse(fs.readFileSync(path.join(dir, 'result.json'), 'utf8'));
   assert.equal(saved.pass, true);
   assert.equal(saved.warnings, 2);
   assert.equal(saved.iterations, 2);
-  assert.deepEqual(saved.flags, ['second dataset needed: Beherbergungsstatistik']);
+  assert.deepEqual(saved.flags, ['Companion Dataset needed: Beherbergungsstatistik']);
   assert.equal(saved.scores.ciLayout.score, 1);
   assert.equal(saved.confirmed, false);
   assert.equal(r.pass, true);

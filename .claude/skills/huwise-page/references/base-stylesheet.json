@@ -3,5 +3,7 @@
   "rootClass": "hw-page",
   "footerClass": "hw-footer",
   "fixedHeightClasses": ["hw-map-area", "hw-chart-area", "hw-table-area"],
-  "maxFixedWidth": 375
+  "maxFixedWidth": 375,
+  "kpiClass": "hw-kpi",
+  "maxKpiTiles": 4
 }

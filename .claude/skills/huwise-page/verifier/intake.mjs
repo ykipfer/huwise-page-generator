@@ -6,15 +6,15 @@
 //        node intake.mjs shared <main-id> <companion-id> [mainField=companionField ...]
 //                                              Companion Dataset: which dimension do the two datasets share?
 import { pathToFileURL } from 'node:url';
-import { withApiKey } from './apikey.mjs';
+import { fetchJsonWithKey } from './apikey.mjs';
 const HOST = process.env.HUWISE_HOST ?? 'https://data.gr.ch';
 
 export const v1Url = id => `${HOST}/api/datasets/1.0/${encodeURIComponent(id)}/?lang=de`;
 
 async function getJson(url) {
-  const res = await fetch(url, { headers: withApiKey(url, { accept: 'application/json' }) });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${url}`);
-  return res.json();
+  const { status, statusText, body } = await fetchJsonWithKey(url);
+  if (status < 200 || status > 299 || body === null) throw new Error(`${status} ${statusText}: ${url}`);
+  return body;
 }
 
 export function summariseV1(d) {

@@ -42,7 +42,7 @@ The Explore API v2.1 returns field labels in the dataset's first metadata langua
 
 If any Visualization is a map, or the prompt names a spatial level, match the data's key field to a level in `boundary-catalogue.md` (`boundary-catalogue.json`): compare the key's **meaning and type**, not just its name (`gemeindenummer` as integer is a BFS number and matches the Gemeinde level, whose key `bfs_nummer` is text, so the join casts both with `''+`).
 
-- A level matches: note the entry. It goes into the plan list as a flag (second dataset, naming the catalogue entry).
+- A level matches: note the entry. It goes into the plan list as a flag (**Boundary Dataset needed: <entry>**, naming the catalogue entry).
 - No level matches: flag it as a missing Widget or Pattern style gap, a **new level** through the deliberate add step. Never search for a boundary dataset.
 
 ## 6. Companion Dataset
