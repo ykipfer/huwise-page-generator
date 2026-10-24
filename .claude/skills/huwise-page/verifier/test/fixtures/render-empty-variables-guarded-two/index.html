@@ -6,7 +6,7 @@
     </div>
     <div ods-results="more" ods-results-context="datactx" ods-results-max="1">
       <p ng-if="more.length">Weitere Zeilen</p>
-      <p ng-hide="more.length">Keine weiteren Daten</p>
+      <p ng-show="!more.length">Keine weiteren Daten</p>
     </div>
   </ods-dataset-context>
 </div>
