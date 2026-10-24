@@ -10,3 +10,6 @@ node_modules/
 .claude/worktrees/
 # scraped platform config cache of the render stage
 .claude/skills/huwise-page/verifier/.cache/
+
+# benchmark run folders (dated runs of /huwise-page benchmark)
+.claude/skills/huwise-page/benchmark/runs/

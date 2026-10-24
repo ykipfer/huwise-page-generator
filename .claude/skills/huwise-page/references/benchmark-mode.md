@@ -1,0 +1,46 @@
+# Benchmark mode
+
+`/huwise-page benchmark` judges the skill end to end (intake, sketch, build, verify, handoff material) on the six fixed requests in `benchmark/requests/`, without waiting for the owner six times. `/huwise-page benchmark <slug>…` runs a subset (slugs are the file names in `benchmark/requests/`). A full run costs about 180 API requests, so run one request first when you are only checking a change. Live Pages are not a pixel target.
+
+All commands below run from the skill's `verifier/` folder (`node benchmark.mjs …`).
+
+## Differences from a normal run
+
+- **No questions.** Never ask the owner anything. The Page Request comes from the request file (prompt exactly as written, dataset ID(s), Target Height 800, Embed Size Gross unless the file says otherwise).
+- **Auto-approve the first Page Sketch.** Build the sketch and run the sketch lint and preview as usual (open no browser: pass `--no-open` to `preview.mjs`), post the plan list into the run's notes, then treat the sketch as approved. **Keep it** right then: `node benchmark.mjs sketch <page-dir>` copies `index.html` and `stylesheet.css` into `<page-dir>/sketch/`. It is never overwritten, so the build cannot touch the copy that sketch fidelity is scored against.
+- **Plan-list flags are recorded, not acted on.** Where a normal run would stop for the owner (missing Widget or Pattern, second dataset, content dropped, historical-state map, values combined across datasets), take the closest Widget-only, Pattern-only route, do not run the deliberate add step, and write the flag into `flags` of the result.
+- **Run folder.** `node benchmark.mjs init [slug…]` makes the dated, gitignored run folder `benchmark/runs/<YYYY-MM-DD>/` (a second run on the same day becomes `<YYYY-MM-DD>-2`) with one Page folder per request, and prints the paths. Build and verify **in that Page folder** (`index.html`, `stylesheet.css`, `verifier-output/`). Nothing is written into the Pages directory (`pages/` at the repo root); `benchmark.mjs` refuses a run folder inside it, and `git status` after a run shows nothing new.
+- **Same build, verify and iteration rules** as `build-verify-handoff.md` steps 5 and 6: at most 3 iterations, final pass at every width. Skip the owner-facing handoff and the chat screenshots; the results replace them.
+
+## Scoring
+
+Once verification ends (clean or at the cap), score three criteria, each 0, 1 or 2, with a **one-line reason**. Review the same screenshots as step 6 (375px and each state at 1200px).
+
+| Criterion (key) | 2 | 1 | 0 |
+|---|---|---|---|
+| **Request fidelity** (`fidelity`) against the request file's must-have checklist **only** | every item met | one or two items missed or only partly met | three or more missed, or the main Visualization is missing |
+| **CI and layout** (`ciLayout`): fits at 375/720/1200, cards and colours as in Mittelverwendung, no area that looks empty | all three hold | one blemish (a colour, spacing, a card style) | an area looks empty, content is cut off, or the CI Rules are clearly broken |
+| **Sketch fidelity** (`sketchFidelity`): the final Page keeps the Page Sketch's areas, order and labels | all kept | one area, label or order change | areas missing or reordered substantially |
+
+Run `node benchmark.mjs aid <page-dir>` before scoring sketch fidelity. It lists the sketch's `hw-` containers that the final Page lost (in order) and the placeholder labels that no longer appear anywhere in it. It is an aid; the score is yours. Do not score against the live Example Page.
+
+Write the scores into a JSON file outside the run folder's Page folders and record them:
+
+```
+{ "iterations": 2, "flags": ["second dataset needed: Beherbergungsstatistik"],
+  "scores": { "fidelity": { "score": 2, "reason": "…" }, "ciLayout": { "score": 1, "reason": "…" }, "sketchFidelity": { "score": 2, "reason": "…" } } }
+```
+
+`node benchmark.mjs record <page-dir> <scores.json>` reads the verifier report for errors and warnings, applies the pass rule and writes `result.json`.
+
+## Pass rule
+
+A request passes when the verifier reports **no errors within 3 iterations** AND the rubric scores at least **4/6 with no 0**. Warnings are counted, not failed.
+
+## Results and the owner's one pass
+
+1. `node benchmark.mjs report <run-dir>` writes and prints `results.md`: per request pass or fail, iterations, warnings, the three scores with their reasons and the recorded flags. Scores show as awaiting the owner's confirmation.
+2. Show the table to the owner. The owner confirms or overrides **all scores in one pass**: `node benchmark.mjs confirm <run-dir> [--override <slug>.<criterion>=<0|1|2>:<reason>]…`. An override replaces that score, keeps the agent's original in the result, and pass or fail is recomputed.
+3. Run `report` again so `results.md` reflects the confirmed scores.
+
+The run folder stays on disk, gitignored. Comparing a run with the Baseline belongs to the Baseline ticket, not to this mode.

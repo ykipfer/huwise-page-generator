@@ -27,6 +27,8 @@ Ask for nothing else. If the dataset ID or prompt is missing, ask for it.
 
 **Refinement**: a change after handoff edits `pages/<slug>/` in place and re-runs steps 6 and 7 in full with a fresh 3-iteration cap, even for a CSS tweak; a change to the plan (a new Visualization, another shape) goes back through steps 2 to 4 and the owner's ok first. See the Refinement section of `references/build-verify-handoff.md`.
 
+**Benchmark mode**: `/huwise-page benchmark` runs all six requests of `benchmark/requests/`, `/huwise-page benchmark <slug>…` a subset (a full run is about 180 API requests). It auto-approves the first Page Sketch (kept for scoring), asks no questions, records plan-list flags instead of acting on them, writes into a dated gitignored run folder (never `pages/`) and scores request fidelity, CI and layout, and sketch fidelity 0 to 2. Procedure: `references/benchmark-mode.md`; tool: `verifier/benchmark.mjs`.
+
 Always read `references/core.md` and `references/rulebook.md` before writing a Page. Never commit; the owner decides what goes into history. The Page folder's `index.html`, `stylesheet.css` and `handoff.md` are tracked, `preview.html` and `verifier-output/` are ignored.
 
 ## Widget index
@@ -65,5 +67,5 @@ The closed lists (the Widget list, the Patterns and the Boundary Dataset catalog
 - `references/`: `core.md`, `rulebook.md`, `base-stylesheet.css`, `widgets/`, `patterns/`, `skeleton/` (static shapes for sketches; `skeleton/page/` is the complete skeleton Page, the starting point for a built Page), `boundary-catalogue.md`, `intake.md`, `page-sketch.md`, `companion-dataset.md`.
 - `verifier/`: `verify.mjs` (staged check), `intake.mjs`, `preview.mjs`, `handoff.mjs`. Run `npm install` and `npx playwright install chromium` there once.
 - Optional API key: set the environment variable `HUWISE_APIKEY` to a data.gr.ch API key for a higher request limit than anonymous access. The verifier (dry-run, render, `intake.mjs`) then sends it as `Authorization: Apikey <key>`, only to the `data.gr.ch` host and only for `/api/` paths, never to other hosts. Without it nothing changes. Keep the key in the environment only: never in a file, report, fixture or commit.
-- `benchmark/`: the six fixed Page Requests.
+- `benchmark/`: the six fixed Page Requests; `benchmark/runs/` (gitignored) holds dated Benchmark runs.
 - `pages/<slug>/` at the repo root: one folder per Page.
